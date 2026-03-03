@@ -842,6 +842,7 @@ interface ReviewRecord {
   reviewId: string;
   diffId: string;         // session ID
   modelId: string;
+  modelVersion: string;   // 모델 버전 (provider API 응답 또는 data/*.json 기준)
   provider: string;
   timestamp: number;
   issuesRaised: number;
@@ -880,7 +881,8 @@ Bandit 상태를 파일 시스템에 영속 저장:
 }
 
 [모델 버전 관리]
-- key: "{provider}/{modelId}"
+- key: "{provider}/{modelId}@{modelVersion}"
+  (modelVersion 미확인 시 "unknown"으로 fallback, 다음 핑에서 갱신)
 - 새 버전 출시 시 → 새 arm 생성
 - 이전 arm의 prior를 50% decay로 warm-start:
   newAlpha = round(oldAlpha × 0.5) + 1
@@ -913,7 +915,23 @@ bandit-store: arm 업데이트 (α 또는 β 증가)
 다음 세션의 model-selector에서 반영
 ```
 
-### 6.5 Phase 3 완료 기준
+### 6.5 향후 확장: Bradley-Terry 글로벌 랭킹 (Phase 3 이후 로드맵)
+
+Thompson Sampling은 각 모델의 독립적 성능을 추적하지만, **모델 간 상대 비교**는 하지 않는다.
+같은 diff를 리뷰한 두 모델의 Q 점수를 "매치업"으로 취급하여 글로벌 랭킹을 추정할 수 있다:
+
+```
+P(model_i beats model_j) = exp(β_i) / (exp(β_i) + exp(β_j))
+```
+
+- 전체 이력에 대해 MLE 추정 (ELO의 K-factor 튜닝 불필요)
+- 부트스트래핑으로 신뢰구간 계산
+- **50회 리뷰 이후**부터 의미 있는 분리 → Phase 3 데이터 축적 후 구현이 자연스러움
+- 구현 시 `bandit-store.ts`의 history 데이터를 활용하여 별도 `bradley-terry.ts` 모듈로 분리
+
+> **현재 Phase 3 범위에서 제외**. Thompson Sampling으로 충분한 모델 선택 품질을 확보한 뒤, 데이터가 축적되면 추가 구현.
+
+### 6.6 Phase 3 완료 기준
 
 - [ ] 리뷰 완료 후 specificity score 자동 계산
 - [ ] L2 토론 결과에서 peer validation rate 추출
@@ -1198,6 +1216,16 @@ export OPENROUTER_API_KEY="sk-or-..."
 | Groq 무료 정책 변경 | provider 사용 불가 | 중간 | 3-tier provider fallback |
 | Thompson Sampling 수렴 느림 | 서브옵티멀 선택 | 낮음 | 콜드 스타트 프로토콜 + 10% 탐색 |
 | 증류 모델 패밀리 오분류 | 다양성 착각 | 낮음 | base architecture 기준 분류 규칙 |
+
+### 의도적 Deferred 항목 (리서치에서 언급되었으나 현재 범위 밖)
+
+| 항목 | 리서치 위치 | 결정 | 비고 |
+|------|-----------|------|------|
+| Bradley-Terry 글로벌 랭킹 | S7 | Phase 3 이후 로드맵 | 50회+ 리뷰 데이터 필요 (Section 6.5 참고) |
+| 변별적 diff 평가 (콜드 스타트) | S7 | Phase 3 이후 | Q 분산 큰 diff 20-50개로 새 모델 빠른 평가. 데이터 축적 전제 |
+| model-quality.json git 정책 | S10 Q2 | Phase 3 구현 시 결정 | `.gitignore` 추천 (개인별 누적이 자연스러움). 팀 공유 시 별도 export 명령 |
+| Context window × diff 크기 매칭 | S10 Q6 | Phase 2 이후 | `contextMin` 정적 제약은 존재. 런타임 diff 토큰 수 계산 → 모델 필터링은 추후 |
+| UCB1 전략 대안 | S7 | 향후 strategy enum 확장 | 현재 Thompson Sampling만 지원. 결정적 디버깅이 필요할 때 추가 |
 
 ### 성능 영향
 
