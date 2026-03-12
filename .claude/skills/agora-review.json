@@ -1,20 +1,20 @@
 {
   "name": "agora-review",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "prefix": "agora",
-  "description": "Multi-agent code review with debate-driven consensus",
+  "description": "Multi-agent code review with debate-driven consensus (V3)",
   "commands": [
     {
       "name": "review",
-      "description": "Run multi-agent code review on current git diff"
+      "description": "Run multi-agent code review pipeline on current git diff"
     },
     {
       "name": "config",
-      "description": "Show or modify reviewer configuration"
+      "description": "View and validate CodeAgora configuration"
     },
     {
       "name": "status",
-      "description": "Check backend CLI installation status"
+      "description": "Show recent review sessions and results"
     }
   ]
 }
