@@ -92,8 +92,8 @@
     "personaAssignment": "random"
   },
   "moderator": {
-    "backend": "codex",
-    "model": "claude-sonnet-4"
+    "backend": "gemini",
+    "model": "gemini-2.5-flash"
   },
   "discussion": {
     "maxRounds": 3,
