@@ -146,13 +146,22 @@ export async function showSession(
   sessionPath: string
 ): Promise<SessionDetail> {
   const parts = sessionPath.split('/');
-  if (parts.length < 2) {
+  if (parts.length !== 2) {
     throw new Error(`Invalid session path format: "${sessionPath}". Expected "YYYY-MM-DD/NNN".`);
   }
   const date = parts[0];
-  const sessionId = parts.slice(1).join('/');
+  const sessionId = parts[1];
+
+  // Prevent path traversal
+  if (date.includes('..') || sessionId.includes('..')) {
+    throw new Error(`Invalid session path: "${sessionPath}". Path traversal not allowed.`);
+  }
 
   const dirPath = path.join(baseDir, '.ca', 'sessions', date, sessionId);
+  const expectedPrefix = path.resolve(path.join(baseDir, '.ca', 'sessions'));
+  if (!path.resolve(dirPath).startsWith(expectedPrefix + path.sep)) {
+    throw new Error(`Invalid session path: "${sessionPath}".`);
+  }
 
   try {
     await fs.access(dirPath);

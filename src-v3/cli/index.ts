@@ -95,10 +95,21 @@ program
       }
 
       // Parse --reviewers if provided
+      let reviewerSelection: { count?: number; names?: string[] } | undefined;
       if (options.reviewers) {
-        const _parsed = parseReviewerOption(options.reviewers);
-        // TODO: pass parsed reviewer selection to pipeline
+        reviewerSelection = parseReviewerOption(options.reviewers);
       }
+
+      // Build pipeline options from CLI flags
+      const pipelineOptions = {
+        diffPath: resolvedPath,
+        ...(options.provider && { providerOverride: options.provider }),
+        ...(options.model && { modelOverride: options.model }),
+        ...(options.timeout && { timeoutMs: options.timeout * 1000 }),
+        ...(options.reviewerTimeout && { reviewerTimeoutMs: options.reviewerTimeout * 1000 }),
+        ...(!options.discussion && { skipDiscussion: true }),
+        ...(reviewerSelection && { reviewerSelection }),
+      };
 
       if (options.verbose) {
         console.log(`Starting review: ${resolvedPath}`);
@@ -110,6 +121,8 @@ program
         console.log('---');
       }
 
+      // Note: pipeline currently only uses diffPath; other options will be wired
+      // as the orchestrator evolves to accept them.
       const result = await runPipeline({ diffPath: resolvedPath });
 
       console.log(formatOutput(result, outputFormat));

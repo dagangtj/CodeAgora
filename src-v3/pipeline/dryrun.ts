@@ -4,7 +4,7 @@
  */
 
 import type { Config } from '../types/config.js';
-import { estimateCost, formatCost, loadPricing } from './cost-estimator.js';
+import { estimateCost, formatCost } from './cost-estimator.js';
 import type { TokenUsage } from './telemetry.js';
 import {
   getEnabledReviewerEntries,
@@ -106,11 +106,12 @@ export function dryRun(config: Config, diffContent: string): DryRunResult {
         isAuto: true,
       };
     }
+    const agent = entry as import('../types/config.js').AgentConfig;
     return {
-      id: entry.id,
-      provider: entry.provider ?? 'unknown',
-      model: entry.model,
-      backend: entry.backend,
+      id: agent.id,
+      provider: agent.provider ?? 'unknown',
+      model: agent.model,
+      backend: agent.backend,
       isAuto: false,
     };
   });
