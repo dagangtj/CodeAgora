@@ -9,6 +9,7 @@ import { getSupportedProviders } from '../../l1/provider-registry.js';
 import { loadConfigFrom } from '../../config/loader.js';
 import { strictValidateConfig } from '../../config/validator.js';
 import { getProviderEnvVar } from '../../providers/env-vars.js';
+import { statusColor } from '../utils/colors.js';
 
 // ============================================================================
 // Types
@@ -162,12 +163,17 @@ export { getProviderEnvVar } from '../../providers/env-vars.js';
 export function formatDoctorReport(result: DoctorResult): string {
   const lines: string[] = [];
   for (const check of result.checks) {
-    const icon = check.status === 'pass' ? '✓' : check.status === 'fail' ? '✗' : '!';
+    const icon =
+      check.status === 'pass'
+        ? statusColor.pass('✓')
+        : check.status === 'fail'
+        ? statusColor.fail('✗')
+        : statusColor.warn('!');
     lines.push(`${icon} ${check.message}`);
   }
   lines.push('');
   lines.push(
-    `Summary: ${result.summary.pass} passed, ${result.summary.fail} failed, ${result.summary.warn} warnings`
+    `Summary: ${statusColor.pass(String(result.summary.pass))} passed, ${statusColor.fail(String(result.summary.fail))} failed, ${statusColor.warn(String(result.summary.warn))} warnings`
   );
   return lines.join('\n');
 }

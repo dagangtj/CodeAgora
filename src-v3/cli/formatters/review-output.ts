@@ -4,11 +4,12 @@
  */
 
 import type { PipelineResult } from '../../pipeline/orchestrator.js';
+import { severityColor, decisionColor, dim, bold } from '../utils/colors.js';
 
 export type OutputFormat = 'text' | 'json' | 'md' | 'github';
 
 // Severity order for display grouping
-const SEVERITY_ORDER = ['critical', 'error', 'warning', 'info', 'minor'] as const;
+const SEVERITY_ORDER = ['HARSHLY_CRITICAL', 'CRITICAL', 'WARNING', 'SUGGESTION'] as const;
 
 // ============================================================================
 // Text format (default)
@@ -22,12 +23,60 @@ export function formatText(result: PipelineResult): string {
 
   if (result.status === 'error') {
     lines.push(`Review failed: ${result.error ?? 'unknown error'}`);
+    lines.push(dim(`  Session: ${result.date}/${result.sessionId}`));
     return lines.join('\n');
   }
 
-  lines.push('Review complete!');
-  lines.push(`  Session: ${result.date}/${result.sessionId}`);
-  lines.push(`  Output: .ca/sessions/${result.date}/${result.sessionId}/`);
+  if (!result.summary) {
+    // Fallback: no summary available
+    lines.push('Review complete!');
+    lines.push(`  Session: ${result.date}/${result.sessionId}`);
+    lines.push(`  Output: .ca/sessions/${result.date}/${result.sessionId}/`);
+    return lines.join('\n');
+  }
+
+  const s = result.summary;
+
+  // Decision header
+  const colorFn = decisionColor[s.decision] ?? bold;
+  lines.push(`${colorFn(s.decision)}  ${dim(s.reasoning)}`);
+  lines.push('');
+
+  // Severity summary line
+  const severityParts = SEVERITY_ORDER
+    .filter((sev) => (s.severityCounts[sev] ?? 0) > 0)
+    .map((sev) => {
+      const fn = severityColor[sev] ?? ((x: string) => x);
+      return fn(`${sev}: ${s.severityCounts[sev]}`);
+    });
+  if (severityParts.length > 0) {
+    lines.push(severityParts.join('  '));
+    lines.push('');
+  }
+
+  // Top issues (up to 5)
+  if (s.topIssues.length > 0) {
+    lines.push(bold('Top Issues:'));
+    for (const issue of s.topIssues.slice(0, 5)) {
+      const fn = severityColor[issue.severity as keyof typeof severityColor] ?? ((x: string) => x);
+      const sev = fn(issue.severity.padEnd(16));
+      const loc = dim(`${issue.filePath}:${issue.lineRange[0]}`);
+      lines.push(`  ${sev}  ${loc}  ${issue.title}`);
+    }
+    lines.push('');
+  }
+
+  // Discussion summary
+  if (s.totalDiscussions > 0) {
+    lines.push(
+      dim(
+        `Discussions: ${s.totalDiscussions} total, ${s.resolved} resolved, ${s.escalated} escalated`
+      )
+    );
+  }
+
+  // Session reference
+  lines.push(dim(`Session: ${result.date}/${result.sessionId}`));
 
   return lines.join('\n');
 }
@@ -63,8 +112,40 @@ export function formatMarkdown(result: PipelineResult): string {
 
   lines.push(`**Session:** ${result.date}/${result.sessionId}`);
   lines.push('');
-  lines.push('Review completed successfully.');
-  lines.push('');
+
+  if (result.summary) {
+    const s = result.summary;
+
+    // Decision
+    lines.push(`**Decision:** ${s.decision}`);
+    lines.push('');
+    lines.push(`> ${s.reasoning}`);
+    lines.push('');
+
+    // Severity table
+    const tableRows = SEVERITY_ORDER
+      .map((sev) => `| ${sev} | ${s.severityCounts[sev] ?? 0} |`)
+      .join('\n');
+    lines.push('| Severity | Count |');
+    lines.push('|----------|-------|');
+    lines.push(tableRows);
+    lines.push('');
+
+    // Top issues
+    if (s.topIssues.length > 0) {
+      lines.push('**Top Issues:**');
+      for (const issue of s.topIssues.slice(0, 5)) {
+        lines.push(
+          `- **[${issue.severity}]** \`${issue.filePath}:${issue.lineRange[0]}\` — ${issue.title}`
+        );
+      }
+      lines.push('');
+    }
+  } else {
+    lines.push('Review completed successfully.');
+    lines.push('');
+  }
+
   lines.push(`See full report: \`.ca/sessions/${result.date}/${result.sessionId}/\``);
 
   return lines.join('\n');
@@ -74,12 +155,11 @@ export function formatMarkdown(result: PipelineResult): string {
 // GitHub format (checkbox + emoji style)
 // ============================================================================
 
-const SEVERITY_EMOJI: Record<string, string> = {
-  critical: '🔴',
-  error: '🟠',
-  warning: '🟡',
-  info: '🔵',
-  minor: '⚪',
+const SEVERITY_GITHUB: Record<string, { emoji: string; label: string }> = {
+  HARSHLY_CRITICAL: { emoji: '🔴', label: 'Critical' },
+  CRITICAL: { emoji: '🟠', label: 'Error' },
+  WARNING: { emoji: '🟡', label: 'Warning' },
+  SUGGESTION: { emoji: '🔵', label: 'Info' },
 };
 
 /**
@@ -99,10 +179,11 @@ export function formatGithub(result: PipelineResult): string {
   lines.push(`✅ **Review completed** — Session \`${result.date}/${result.sessionId}\``);
   lines.push('');
 
-  // Placeholder severity groups for future expansion when PipelineResult carries issues
+  // Severity groups with actual counts from summary
   for (const severity of SEVERITY_ORDER) {
-    const emoji = SEVERITY_EMOJI[severity] ?? '⚪';
-    lines.push(`### ${emoji} ${severity.toUpperCase()} (0)`);
+    const count = result.summary?.severityCounts[severity] ?? 0;
+    const { emoji, label } = SEVERITY_GITHUB[severity] ?? { emoji: '⚪', label: severity };
+    lines.push(`### ${emoji} ${label} / ${severity} (${count})`);
     lines.push('');
   }
 

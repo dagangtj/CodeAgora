@@ -140,6 +140,114 @@ describe('formatOutput', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Fixtures with populated summary
+// ---------------------------------------------------------------------------
+
+const mockResultWithSummary: PipelineResult = {
+  sessionId: '001',
+  date: '2026-03-14',
+  status: 'success',
+  summary: {
+    decision: 'REJECT',
+    reasoning: 'Critical security issues found',
+    totalReviewers: 3,
+    forfeitedReviewers: 0,
+    severityCounts: { CRITICAL: 2, WARNING: 3, SUGGESTION: 1 },
+    topIssues: [
+      { severity: 'CRITICAL', filePath: 'auth.ts', lineRange: [10, 10] as [number, number], title: 'SQL injection vulnerability' },
+      { severity: 'CRITICAL', filePath: 'api.ts', lineRange: [45, 45] as [number, number], title: 'Unvalidated user input' },
+      { severity: 'WARNING', filePath: 'utils.ts', lineRange: [23, 23] as [number, number], title: 'Missing error handling' },
+    ],
+    totalDiscussions: 5,
+    resolved: 3,
+    escalated: 2,
+  },
+};
+
+// ---------------------------------------------------------------------------
+// formatText with summary
+// ---------------------------------------------------------------------------
+
+describe('formatText with summary', () => {
+  it('should contain REJECT decision', () => {
+    const output = formatText(mockResultWithSummary);
+    expect(output).toContain('REJECT');
+  });
+
+  it('should contain CRITICAL count', () => {
+    const output = formatText(mockResultWithSummary);
+    expect(output).toContain('CRITICAL: 2');
+  });
+
+  it('should contain auth.ts:10 issue location', () => {
+    const output = formatText(mockResultWithSummary);
+    expect(output).toContain('auth.ts:10');
+  });
+
+  it('should contain SQL injection title', () => {
+    const output = formatText(mockResultWithSummary);
+    expect(output).toContain('SQL injection');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// formatMarkdown with summary
+// ---------------------------------------------------------------------------
+
+describe('formatMarkdown with summary', () => {
+  it('should contain severity table header', () => {
+    const output = formatMarkdown(mockResultWithSummary);
+    expect(output).toContain('| Severity | Count |');
+  });
+
+  it('should contain CRITICAL count row', () => {
+    const output = formatMarkdown(mockResultWithSummary);
+    expect(output).toContain('| CRITICAL | 2 |');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// formatGithub with summary
+// ---------------------------------------------------------------------------
+
+describe('formatGithub with summary', () => {
+  it('should contain CRITICAL count from summary (not 0)', () => {
+    const output = formatGithub(mockResultWithSummary);
+    expect(output).toContain('🟠');
+    expect(output).toContain('(2)');
+  });
+
+  it('should contain WARNING count from summary (not 0)', () => {
+    const output = formatGithub(mockResultWithSummary);
+    expect(output).toContain('🟡');
+    expect(output).toContain('(3)');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// formatJson with summary
+// ---------------------------------------------------------------------------
+
+describe('formatJson with summary', () => {
+  it('should have summary.decision === REJECT', () => {
+    const output = formatJson(mockResultWithSummary);
+    const parsed = JSON.parse(output);
+    expect(parsed.summary.decision).toBe('REJECT');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// formatOutput dispatcher with summary
+// ---------------------------------------------------------------------------
+
+describe('formatOutput with summary', () => {
+  it('text format should contain REJECT', () => {
+    const output = formatOutput(mockResultWithSummary, 'text');
+    expect(output).toContain('REJECT');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // parseReviewerOption
 // ---------------------------------------------------------------------------
 

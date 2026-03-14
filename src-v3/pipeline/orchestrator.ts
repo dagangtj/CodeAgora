@@ -19,7 +19,10 @@ import { writeHeadVerdict } from '../l3/writer.js';
 import { QualityTracker } from '../l0/quality-tracker.js';
 import { resolveReviewers, getBanditStore } from '../l0/index.js';
 import type { EvidenceDocument } from '../types/core.js';
+import type { ProgressEmitter } from './progress.js';
 import fs from 'fs/promises';
+
+const SEVERITY_ORDER = ['HARSHLY_CRITICAL', 'CRITICAL', 'WARNING', 'SUGGESTION'];
 
 // ============================================================================
 // Main Pipeline
@@ -29,21 +32,40 @@ export interface PipelineInput {
   diffPath: string;
 }
 
+export interface PipelineSummary {
+  decision: 'ACCEPT' | 'REJECT' | 'NEEDS_HUMAN';
+  reasoning: string;
+  totalReviewers: number;
+  forfeitedReviewers: number;
+  severityCounts: Record<string, number>;
+  topIssues: Array<{
+    severity: string;
+    filePath: string;
+    lineRange: [number, number];
+    title: string;
+  }>;
+  totalDiscussions: number;
+  resolved: number;
+  escalated: number;
+}
+
 export interface PipelineResult {
   sessionId: string;
   date: string;
   status: 'success' | 'error';
   error?: string;
+  summary?: PipelineSummary;
 }
 
 /**
  * Run complete V3 pipeline
  */
-export async function runPipeline(input: PipelineInput): Promise<PipelineResult> {
+export async function runPipeline(input: PipelineInput, progress?: ProgressEmitter): Promise<PipelineResult> {
   let session: SessionManager | undefined;
 
   try {
     // Load config and normalize (expand declarative reviewers if needed)
+    progress?.stageStart('init', 'Loading config...');
     const rawConfig = await loadConfig();
     const config = normalizeConfig(rawConfig);
 
@@ -54,6 +76,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
 
     // Read diff
     const diffContent = await fs.readFile(input.diffPath, 'utf-8');
+    progress?.stageComplete('init', 'Config loaded');
 
     // === L3 HEAD: Diff Grouping ===
     const fileGroups = groupDiff(diffContent);
@@ -75,10 +98,12 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
       config.modelRouter
     );
 
+    progress?.stageStart('review', 'Running reviewers...');
     const reviewResults = await executeReviewers(
       reviewerInputs,
       config.errorHandling.maxRetries
     );
+    progress?.stageComplete('review', `${reviewResults.length} reviewers completed`);
 
     // Check forfeit threshold
     const forfeitCheck = checkForfeitThreshold(
@@ -146,6 +171,7 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
     }
 
     // === L2 MODERATOR: Run Discussions ===
+    progress?.stageStart('discuss', 'Moderating discussions...');
     const moderatorReport = await runModerator({
       config: config.moderator,
       supporterPoolConfig: config.supporters,
@@ -154,6 +180,8 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
       date,
       sessionId,
     });
+
+    progress?.stageComplete('discuss', 'Discussions complete');
 
     // === QUALITY TRACKING: Record L2 discussion results ===
     qualityTracker.recordDiscussionResults(
@@ -190,8 +218,10 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
     }
 
     // === L3 HEAD: Final Verdict ===
+    progress?.stageStart('verdict', 'Generating verdict...');
     const headVerdict = makeHeadVerdict(moderatorReport);
     await writeHeadVerdict(date, sessionId, headVerdict);
+    progress?.stageComplete('verdict', 'Verdict complete');
 
     // === QUALITY TRACKING: Finalize rewards and persist bandit state ===
     const rewards = qualityTracker.finalizeRewards();
@@ -226,10 +256,39 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
     // Complete session
     await session.setStatus('completed');
 
+    // Build summary from pipeline data
+    const severityCounts: Record<string, number> = {};
+    for (const doc of allEvidenceDocs) {
+      severityCounts[doc.severity] = (severityCounts[doc.severity] ?? 0) + 1;
+    }
+
+    const topIssues = [...allEvidenceDocs]
+      .sort((a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity))
+      .slice(0, 5)
+      .map(d => ({
+        severity: d.severity,
+        filePath: d.filePath,
+        lineRange: d.lineRange,
+        title: d.issueTitle,
+      }));
+
+    progress?.pipelineComplete('Done!');
+
     return {
       sessionId,
       date,
       status: 'success',
+      summary: {
+        decision: headVerdict.decision,
+        reasoning: headVerdict.reasoning,
+        totalReviewers: reviewerInputs.length,
+        forfeitedReviewers: reviewResults.filter(r => r.status === 'forfeit').length,
+        severityCounts,
+        topIssues,
+        totalDiscussions: moderatorReport.summary.totalDiscussions,
+        resolved: moderatorReport.summary.resolved,
+        escalated: moderatorReport.summary.escalated,
+      },
     };
   } catch (error) {
     // Mark session as failed if it was created

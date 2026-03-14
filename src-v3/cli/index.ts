@@ -18,6 +18,8 @@ import {
 } from './commands/sessions.js';
 import { formatOutput, type OutputFormat } from './formatters/review-output.js';
 import { parseReviewerOption, readStdin } from './options/review-options.js';
+import ora from 'ora';
+import { ProgressEmitter } from '../pipeline/progress.js';
 
 /**
  * Derive the display name from the invoked binary path.
@@ -50,6 +52,7 @@ program
   .option('--timeout <seconds>', 'Pipeline timeout in seconds', parseInt)
   .option('--reviewer-timeout <seconds>', 'Per-reviewer timeout in seconds', parseInt)
   .option('--no-discussion', 'Skip L2 discussion phase')
+  .option('--quiet', 'Suppress progress output', false)
   .action(async (diffPath: string | undefined, options: {
     dryRun?: boolean;
     output: string;
@@ -60,6 +63,7 @@ program
     timeout?: number;
     reviewerTimeout?: number;
     discussion: boolean;
+    quiet: boolean;
   }) => {
     try {
       const outputFormat = (['text', 'json', 'md', 'github'].includes(options.output)
@@ -126,7 +130,47 @@ program
         console.log('---');
       }
 
-      const result = await runPipeline(pipelineOptions);
+      // Setup progress spinner (stderr so stdout remains clean for results)
+      let progress: ProgressEmitter | undefined;
+      let spinner: ReturnType<typeof ora> | undefined;
+
+      if (!options.quiet) {
+        progress = new ProgressEmitter();
+        spinner = ora({ stream: process.stderr });
+
+        const stageLabels: Record<string, string> = {
+          init: 'Loading config...',
+          review: 'Running reviewers...',
+          discuss: 'Moderating discussions...',
+          verdict: 'Generating verdict...',
+          complete: 'Done!',
+        };
+
+        progress.onProgress((event) => {
+          switch (event.event) {
+            case 'stage-start':
+              spinner!.start(stageLabels[event.stage] ?? event.stage);
+              break;
+            case 'stage-update':
+              if (event.stage === 'review' && event.details?.completed != null) {
+                spinner!.text = `Running reviewers... ${event.details.completed}/${event.details.total}`;
+              }
+              break;
+            case 'stage-complete':
+              spinner!.succeed(stageLabels[event.stage] ?? event.stage);
+              break;
+            case 'stage-error':
+              spinner!.fail(event.details?.error ?? 'Error');
+              break;
+            case 'pipeline-complete':
+              spinner!.stop();
+              break;
+          }
+        });
+      }
+
+      const result = await runPipeline(pipelineOptions, progress);
+      spinner?.stop();
 
       console.log(formatOutput(result, outputFormat));
 

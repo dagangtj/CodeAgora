@@ -45,7 +45,11 @@ export class ProgressEmitter extends EventEmitter {
     const full: ProgressEvent = { ...event, timestamp: Date.now() };
     this.currentStage = event.stage;
     this.stageProgress = event.progress;
-    this.emit('progress', full);
+    try {
+      this.emit('progress', full);
+    } catch {
+      // progress listener errors must never abort the pipeline
+    }
   }
 
   stageStart(stage: PipelineStage, message: string): void {

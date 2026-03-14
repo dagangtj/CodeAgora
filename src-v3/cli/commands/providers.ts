@@ -5,6 +5,7 @@
 
 import { getSupportedProviders } from '../../l1/provider-registry.js';
 import { getProviderEnvVar } from './doctor.js';
+import { statusColor, bold } from '../utils/colors.js';
 
 // ============================================================================
 // Types
@@ -42,11 +43,13 @@ export function formatProviderList(providers: ProviderInfo[]): string {
   const divider = '\u2500'.repeat(COL_PROVIDER + COL_KEY + 10);
 
   const rows = providers.map((p) => {
+    const paddedName = p.name.padEnd(COL_PROVIDER);
+    const paddedKey = p.apiKeyEnvVar.padEnd(COL_KEY);
     const keyDisplay = p.apiKeySet
-      ? `\u2713 ${p.apiKeyEnvVar}`
-      : `\u2717 ${p.apiKeyEnvVar}`;
+      ? statusColor.pass(`\u2713 ${paddedKey}`)
+      : statusColor.fail(`\u2717 ${paddedKey}`);
     const status = p.apiKeySet ? 'available' : 'no key';
-    return p.name.padEnd(COL_PROVIDER) + keyDisplay.padEnd(COL_KEY) + status;
+    return bold(paddedName) + keyDisplay + status;
   });
 
   return [header, divider, ...rows].join('\n');
