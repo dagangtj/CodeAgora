@@ -33,6 +33,8 @@ export const SeveritySchema = z.enum([
 ]);
 export type Severity = z.infer<typeof SeveritySchema>;
 
+export const SEVERITY_ORDER = ['HARSHLY_CRITICAL', 'CRITICAL', 'WARNING', 'SUGGESTION'] as const;
+
 // ============================================================================
 // Evidence Document (L1 Reviewer Output)
 // ============================================================================

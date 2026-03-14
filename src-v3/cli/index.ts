@@ -66,6 +66,10 @@ program
     quiet: boolean;
   }) => {
     try {
+      if (options.quiet && options.verbose) {
+        options.verbose = false; // --quiet takes precedence
+      }
+
       const outputFormat = (['text', 'json', 'md', 'github'].includes(options.output)
         ? options.output : 'text') as OutputFormat;
 
@@ -152,9 +156,8 @@ program
               spinner!.start(stageLabels[event.stage] ?? event.stage);
               break;
             case 'stage-update':
-              if (event.stage === 'review' && event.details?.completed != null) {
-                spinner!.text = `Running reviewers... ${event.details.completed}/${event.details.total}`;
-              }
+              // Per-reviewer progress updates are not currently emitted by executeReviewers.
+              // Future enhancement: wrap each reviewer promise to emit incremental progress.
               break;
             case 'stage-complete':
               spinner!.succeed(stageLabels[event.stage] ?? event.stage);

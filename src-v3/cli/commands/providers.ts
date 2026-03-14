@@ -44,10 +44,8 @@ export function formatProviderList(providers: ProviderInfo[]): string {
 
   const rows = providers.map((p) => {
     const paddedName = p.name.padEnd(COL_PROVIDER);
-    const paddedKey = p.apiKeyEnvVar.padEnd(COL_KEY);
-    const keyDisplay = p.apiKeySet
-      ? statusColor.pass(`\u2713 ${paddedKey}`)
-      : statusColor.fail(`\u2717 ${paddedKey}`);
+    const keyText = `${p.apiKeySet ? '\u2713' : '\u2717'} ${p.apiKeyEnvVar}`.padEnd(COL_KEY);
+    const keyDisplay = p.apiKeySet ? statusColor.pass(keyText) : statusColor.fail(keyText);
     const status = p.apiKeySet ? 'available' : 'no key';
     return bold(paddedName) + keyDisplay + status;
   });

@@ -37,6 +37,13 @@ export interface SessionDiff {
 // Helpers
 // ============================================================================
 
+function colorStatus(status: string): string {
+  if (status === 'completed') return statusColor.pass(status);
+  if (status === 'failed') return statusColor.fail(status);
+  if (status === 'in_progress') return statusColor.warn(status);
+  return status;
+}
+
 async function readJsonFile(filePath: string): Promise<Record<string, unknown> | null> {
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
@@ -233,15 +240,7 @@ export function formatSessionList(sessions: SessionEntry[]): string {
   const divider = '\u2500'.repeat(COL_SESSION + COL_DATE + 12);
 
   const rows = sessions.map((s) => {
-    const coloredStatus =
-      s.status === 'completed'
-        ? statusColor.pass(s.status)
-        : s.status === 'failed'
-        ? statusColor.fail(s.status)
-        : s.status === 'in_progress'
-        ? statusColor.warn(s.status)
-        : s.status;
-    return s.id.padEnd(COL_SESSION) + s.date.padEnd(COL_DATE) + coloredStatus;
+    return s.id.padEnd(COL_SESSION) + s.date.padEnd(COL_DATE) + colorStatus(s.status);
   });
 
   return [header, divider, ...rows].join('\n');
@@ -250,15 +249,7 @@ export function formatSessionList(sessions: SessionEntry[]): string {
 export function formatSessionDetail(detail: SessionDetail): string {
   const lines: string[] = [];
   lines.push(`Session: ${detail.entry.id}`);
-  const coloredDetailStatus =
-    detail.entry.status === 'completed'
-      ? statusColor.pass(detail.entry.status)
-      : detail.entry.status === 'failed'
-      ? statusColor.fail(detail.entry.status)
-      : detail.entry.status === 'in_progress'
-      ? statusColor.warn(detail.entry.status)
-      : detail.entry.status;
-  lines.push(`Status:  ${coloredDetailStatus}`);
+  lines.push(`Status:  ${colorStatus(detail.entry.status)}`);
   lines.push(`Date:    ${detail.entry.date}`);
 
   if (detail.metadata) {
@@ -275,36 +266,36 @@ export function formatSessionDetail(detail: SessionDetail): string {
   }
 
   if (detail.verdict) {
-    const rawIssues = (detail.verdict as Record<string, unknown>);
-    const issueList: Array<Record<string, unknown>> = [];
+    const unified: Array<{ title: string; severity?: string }> = [];
     for (const key of ['issues', 'findings', 'items']) {
-      const val = rawIssues[key];
+      const val = (detail.verdict as Record<string, unknown>)[key];
       if (Array.isArray(val)) {
         for (const item of val) {
           if (typeof item === 'object' && item !== null) {
-            issueList.push(item as Record<string, unknown>);
+            const obj = item as Record<string, unknown>;
+            unified.push({
+              title: String(obj['title'] ?? obj['description'] ?? obj['message'] ?? JSON.stringify(item)),
+              severity: typeof obj['severity'] === 'string' ? obj['severity'] : undefined,
+            });
+          } else {
+            unified.push({ title: String(item) });
           }
         }
         break;
       }
     }
-    const issues = extractIssues(detail.verdict);
-    lines.push(`Issues:  ${issues.length}`);
-    if (issues.length > 0) {
-      for (let i = 0; i < Math.min(5, issues.length); i++) {
-        const issueObj = issueList[i];
-        const severity = issueObj && typeof issueObj['severity'] === 'string'
-          ? issueObj['severity']
-          : null;
+    lines.push(`Issues:  ${unified.length}`);
+    if (unified.length > 0) {
+      for (const { title, severity } of unified.slice(0, 5)) {
         const coloredSeverity = severity
           ? (severity in severityColor
               ? severityColor[severity as keyof typeof severityColor](severity)
               : severity) + ' '
           : '';
-        lines.push(`  - ${coloredSeverity}${issues[i]}`);
+        lines.push(`  - ${coloredSeverity}${title}`);
       }
-      if (issues.length > 5) {
-        lines.push(`  ... and ${issues.length - 5} more`);
+      if (unified.length > 5) {
+        lines.push(`  ... and ${unified.length - 5} more`);
       }
     }
   }

@@ -19,10 +19,9 @@ import { writeHeadVerdict } from '../l3/writer.js';
 import { QualityTracker } from '../l0/quality-tracker.js';
 import { resolveReviewers, getBanditStore } from '../l0/index.js';
 import type { EvidenceDocument } from '../types/core.js';
+import { SEVERITY_ORDER } from '../types/core.js';
 import type { ProgressEmitter } from './progress.js';
 import fs from 'fs/promises';
-
-const SEVERITY_ORDER = ['HARSHLY_CRITICAL', 'CRITICAL', 'WARNING', 'SUGGESTION'];
 
 // ============================================================================
 // Main Pipeline

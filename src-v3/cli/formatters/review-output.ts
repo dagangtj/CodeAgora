@@ -4,12 +4,10 @@
  */
 
 import type { PipelineResult } from '../../pipeline/orchestrator.js';
+import { SEVERITY_ORDER } from '../../types/core.js';
 import { severityColor, decisionColor, dim, bold } from '../utils/colors.js';
 
 export type OutputFormat = 'text' | 'json' | 'md' | 'github';
-
-// Severity order for display grouping
-const SEVERITY_ORDER = ['HARSHLY_CRITICAL', 'CRITICAL', 'WARNING', 'SUGGESTION'] as const;
 
 // ============================================================================
 // Text format (default)
@@ -183,7 +181,7 @@ export function formatGithub(result: PipelineResult): string {
   for (const severity of SEVERITY_ORDER) {
     const count = result.summary?.severityCounts[severity] ?? 0;
     const { emoji, label } = SEVERITY_GITHUB[severity] ?? { emoji: '⚪', label: severity };
-    lines.push(`### ${emoji} ${label} / ${severity} (${count})`);
+    lines.push(`### ${emoji} **${label}** / ${severity} (${count})`);
     lines.push('');
   }
 

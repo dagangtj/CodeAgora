@@ -248,6 +248,89 @@ describe('formatOutput with summary', () => {
 });
 
 // ---------------------------------------------------------------------------
+// formatText ACCEPT decision / zero discussions
+// ---------------------------------------------------------------------------
+
+describe('formatText with ACCEPT decision', () => {
+  const acceptResult: PipelineResult = {
+    sessionId: '003',
+    date: '2026-03-15',
+    status: 'success',
+    summary: {
+      decision: 'ACCEPT',
+      reasoning: 'No issues found',
+      totalReviewers: 2,
+      forfeitedReviewers: 0,
+      severityCounts: {},
+      topIssues: [],
+      totalDiscussions: 0,
+      resolved: 0,
+      escalated: 0,
+    },
+  };
+
+  it('should contain ACCEPT', () => {
+    const output = formatText(acceptResult);
+    expect(output).toContain('ACCEPT');
+  });
+
+  it('should NOT contain Discussions: when totalDiscussions is 0', () => {
+    const output = formatText(acceptResult);
+    expect(output).not.toContain('Discussions:');
+  });
+});
+
+describe('formatText with NEEDS_HUMAN decision', () => {
+  const needsHumanResult: PipelineResult = {
+    sessionId: '004',
+    date: '2026-03-15',
+    status: 'success',
+    summary: {
+      decision: 'NEEDS_HUMAN',
+      reasoning: 'Ambiguous changes require human judgement',
+      totalReviewers: 3,
+      forfeitedReviewers: 1,
+      severityCounts: { WARNING: 1 },
+      topIssues: [],
+      totalDiscussions: 1,
+      resolved: 0,
+      escalated: 1,
+    },
+  };
+
+  it('should contain NEEDS_HUMAN', () => {
+    const output = formatText(needsHumanResult);
+    expect(output).toContain('NEEDS_HUMAN');
+  });
+});
+
+describe('formatGithub with HARSHLY_CRITICAL severity', () => {
+  const hcResult: PipelineResult = {
+    sessionId: '005',
+    date: '2026-03-15',
+    status: 'success',
+    summary: {
+      decision: 'REJECT',
+      reasoning: 'Data loss vulnerability',
+      totalReviewers: 2,
+      forfeitedReviewers: 0,
+      severityCounts: { HARSHLY_CRITICAL: 1 },
+      topIssues: [
+        { severity: 'HARSHLY_CRITICAL', filePath: 'db.ts', lineRange: [5, 5] as [number, number], title: 'Data loss on migration' },
+      ],
+      totalDiscussions: 1,
+      resolved: 0,
+      escalated: 1,
+    },
+  };
+
+  it('should contain 🔴 **Critical** for HARSHLY_CRITICAL severity section', () => {
+    const output = formatGithub(hcResult);
+    expect(output).toContain('🔴 **Critical**');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // parseReviewerOption
 // ---------------------------------------------------------------------------
 
