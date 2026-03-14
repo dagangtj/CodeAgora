@@ -198,28 +198,27 @@ describe('runModerator() parallel execution', () => {
     expect(report.summary.escalated).toBe(1);
   });
 
-  it('parallel execution is faster than sequential (mock delay test)', async () => {
-    const DELAY_MS = 50;
+  it('parallel execution runs discussions concurrently', async () => {
+    const callTimestamps: number[] = [];
+    vi.mocked(executeBackend).mockImplementation(async () => {
+      callTimestamps.push(Date.now());
+      await new Promise(r => setTimeout(r, 50));
+      return 'AGREE: all good';
+    });
 
-    vi.mocked(executeBackend).mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve('AGREE: all good'), DELAY_MS))
-    );
-
-    const discussions = [
+    await runModerator(makeInput([
       makeDiscussion('d001'),
       makeDiscussion('d002'),
       makeDiscussion('d003'),
-    ];
+    ]));
 
-    // Sequential lower bound: 3 discussions × 2 supporters × DELAY_MS each = 300ms
-    // Parallel upper bound should be well under that
-    const sequentialLowerBound = discussions.length * supporterPoolConfig.pickCount * DELAY_MS;
-
-    const start = Date.now();
-    await runModerator(makeInput(discussions));
-    const elapsed = Date.now() - start;
-
-    // Parallel should complete in less than the sequential lower bound
-    expect(elapsed).toBeLessThan(sequentialLowerBound);
+    // If parallel: multiple calls start within a tight window
+    // Sequential: calls would be spaced 50ms+ apart
+    callTimestamps.sort((a, b) => a - b);
+    // At least 2 calls should start within 30ms of each other (parallel indicator)
+    const hasOverlap = callTimestamps.some((t, i) =>
+      i > 0 && (t - callTimestamps[i - 1]) < 30
+    );
+    expect(hasOverlap).toBe(true);
   });
 });

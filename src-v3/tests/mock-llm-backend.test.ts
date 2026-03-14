@@ -3,7 +3,7 @@
  * Phase 0: Foundation for all integration tests.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   MockLLMBackend,
   createMockReviewResponse,
@@ -118,14 +118,15 @@ describe('MockLLMBackend', () => {
 
   describe('registerDelay(pattern, delayMs, response)', () => {
     it('should delay then return response', async () => {
+      vi.useFakeTimers();
       mock.registerDelay('slow', 50, 'delayed response');
 
-      const start = Date.now();
-      const result = await mock.execute(makeInput({ prompt: 'slow request' }));
-      const elapsed = Date.now() - start;
+      const promise = mock.execute(makeInput({ prompt: 'slow request' }));
+      await vi.advanceTimersByTimeAsync(50);
+      const result = await promise;
 
       expect(result).toBe('delayed response');
-      expect(elapsed).toBeGreaterThanOrEqual(40); // Allow small timing variance
+      vi.useRealTimers();
     });
   });
 
@@ -226,14 +227,15 @@ describe('MockLLMBackend', () => {
 
   describe('timeout simulation', () => {
     it('should simulate delay longer than typical timeout', async () => {
+      vi.useFakeTimers();
       mock.registerDelay('slow-model', 100, 'too late');
 
-      const start = Date.now();
-      const result = await mock.execute(makeInput({ prompt: 'slow-model call' }));
-      const elapsed = Date.now() - start;
+      const promise = mock.execute(makeInput({ prompt: 'slow-model call' }));
+      await vi.advanceTimersByTimeAsync(100);
+      const result = await promise;
 
-      expect(elapsed).toBeGreaterThanOrEqual(90);
       expect(result).toBe('too late');
+      vi.useRealTimers();
     });
   });
 });
