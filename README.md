@@ -2,246 +2,491 @@
 
 **Where LLMs Debate Your Code**
 
-![Tests](https://img.shields.io/badge/tests-86%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-85%25-green)
-![Phase](https://img.shields.io/badge/phase-production--ready-blue)
+![Version](https://img.shields.io/badge/version-3.0.0-blue)
+![Tests](https://img.shields.io/badge/tests-1107%20passing-brightgreen)
+![Node](https://img.shields.io/badge/node-%3E%3D18-green)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-Multi-agent code review system powered by heterogeneous LLMs with debate-driven consensus.
+CodeAgora runs multiple LLMs in parallel to independently review your code, then routes conflicts through a structured debate before a head agent delivers the final verdict. Different models have different blind spots — running them together catches more issues and filters noise through consensus.
 
-## Overview
-
-CodeAgora orchestrates multiple AI reviewers to independently analyze your code, then facilitates structured debates when opinions conflict. This approach combines the diversity of different AI models with rigorous reasoning to catch more issues and reduce false positives.
-
-### Key Features
-
-- **🎭 Heterogeneous Models**: Codex, Gemini, OpenCode - different error profiles, better coverage
-- **🗳️ 75% Majority Voting Gate**: Filters ~60-80% of non-controversial issues automatically
-- **⚖️ Structured Debate**: Only triggers for genuine conflicts, not frivolous disagreements
-- **🧠 Anti-Conformity Prompts**: Prevents groupthink, preserves minority positions with strong evidence
-- **🤖 Claude Code Orchestration**: Seamless integration as a Claude Code skill
+---
 
 ## How It Works
 
 ```
-1. Extract git diff
-2. Parallel independent reviews → [Codex, Gemini, OpenCode, ...]
-3. Majority voting gate (75% threshold)
-   ├─ Strong consensus → Skip to synthesis
-   └─ Conflict detected → Structured debate (max 3 rounds)
-4. Claude Code synthesizes final review
+git diff | agora review
+
+  L1  ─── Reviewer A ──┐
+        ─── Reviewer B ──┤── parallel independent reviews
+        ─── Reviewer C ──┘
+                │
+  L2  ─── Discussion Moderator
+        ─── Supporter pool + Devil's Advocate
+        ─── Consensus voting per issue
+                │
+  L3  ─── Head Agent ──► ACCEPT / REJECT / NEEDS_HUMAN
 ```
 
-### Academic Foundation
+**L1 — Parallel Reviewers**: Multiple LLMs review the diff independently. Severity-based thresholds determine which issues proceed to debate (e.g., `CRITICAL` issues go straight to discussion; `SUGGESTION` level issues go to a suggestions file).
 
-- **Debate or Vote** (Du et al.): Multi-agent debate improves reasoning quality
-- **Free-MAD** (Chen et al.): Anti-conformity prompts prevent consensus bias
-- **Heterogeneous Ensembles**: Different models = different blind spots
+**L2 — Discussion**: A supporter pool and devil's advocate debate contested issues over multiple rounds. The moderator enforces consensus or makes a forced decision.
+
+**L3 — Head Verdict**: Groups issues, scans unconfirmed findings, and delivers a final `ACCEPT`, `REJECT`, or `NEEDS_HUMAN` decision.
+
+---
 
 ## Quick Start
 
-### Prerequisites
+Get running in under 2 minutes.
 
-**Required:**
-- [Claude Code](https://docs.anthropic.com/claude-code)
-
-**Backend CLIs** (at least one):
-- **Codex CLI**: `npm i -g @openai/codex` ([docs](https://www.npmjs.com/package/@openai/codex))
-- **Gemini CLI**: `npm install -g @google/gemini-cli` ([docs](https://www.npmjs.com/package/@google/gemini-cli))
-- **OpenCode CLI**: `npm i -g opencode-ai@latest` ([docs](https://github.com/sst/opencode))
-
-**macOS Users:**
-- Install coreutils for timeout support: `brew install coreutils`
-
-### Installation
+**Prerequisites**: Node.js 18+, pnpm
 
 ```bash
-# Clone repository
-git clone <repo-url>
-cd codeagora
+# 1. Clone and install
+git clone <repo-url> codeagora
+cd codeagora/src-v3
+pnpm install
 
-# Build tools package
-cd tools
+# 2. Build
+pnpm build
+
+# 3. Link the CLI globally (or use npx)
+npm link
+
+# 4. Initialize in your project
+cd /your/project
+agora init
+
+# 5. Set an API key (Groq has a free tier — good starting point)
+export GROQ_API_KEY=your_key_here
+
+# 6. Run your first review
+git diff HEAD~1 | agora review
+```
+
+That's it. `agora init` writes a `.ca/config.json` with sensible defaults using your available providers.
+
+---
+
+## Installation
+
+### From source
+
+```bash
+git clone <repo-url> codeagora
+cd codeagora/src-v3
 pnpm install
 pnpm build
-cd ..
-
-# Copy config template
-cp codeagora.config.example.json codeagora.config.json
-
-# Edit config to enable your backends
-vim codeagora.config.json
 ```
 
-### Usage
+The build produces `dist/cli/index.js`. The binary is available as both `agora` and `codeagora`.
+
+### API Keys
+
+Set at least one provider API key in your environment:
+
+| Provider | Environment Variable |
+|----------|----------------------|
+| Groq | `GROQ_API_KEY` |
+| Google | `GOOGLE_API_KEY` |
+| OpenRouter | `OPENROUTER_API_KEY` |
+| Mistral | `MISTRAL_API_KEY` |
+| Cerebras | `CEREBRAS_API_KEY` |
+| Together | `TOGETHER_API_KEY` |
+| xAI | `XAI_API_KEY` |
+| NVIDIA NIM | `NVIDIA_API_KEY` |
+
+Check which keys are detected:
 
 ```bash
-# Run code review via Claude Code
-/agora review
-
-# Check backend status
-/agora status
-
-# Configure reviewers
-/agora config
+agora providers
 ```
+
+---
+
+## CLI Reference
+
+### `agora review [diff-path]`
+
+Run the full review pipeline on a diff file or stdin.
+
+```bash
+# Review a diff file
+agora review changes.diff
+
+# Pipe from git
+git diff HEAD~1 | agora review
+
+# Review a specific commit range
+git diff main...feature-branch | agora review
+
+# Output as JSON (useful for CI)
+git diff HEAD~1 | agora review --output json
+
+# Skip the L2 discussion phase (faster, less thorough)
+agora review changes.diff --no-discussion
+
+# Validate config without running
+agora review --dry-run
+```
+
+**Options:**
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--output <format>` | Output format: `text`, `json`, `md`, `github` | `text` |
+| `--provider <name>` | Override provider for all reviewers | — |
+| `--model <name>` | Override model for all reviewers | — |
+| `--reviewers <value>` | Number of reviewers or comma-separated IDs | — |
+| `--timeout <seconds>` | Pipeline-level timeout | — |
+| `--reviewer-timeout <seconds>` | Per-reviewer timeout | — |
+| `--no-discussion` | Skip L2 discussion phase | — |
+| `--dry-run` | Validate config only | — |
+| `--quiet` | Suppress progress output | — |
+| `--verbose` | Show detailed telemetry | — |
+
+**Exit codes:**
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success — review passed |
+| `1` | Review completed with `REJECT` decision |
+| `2` | Config or setup error |
+| `3` | Runtime error |
+
+### `agora init`
+
+Initialize CodeAgora in the current project. Creates `.ca/config.json` and a `.reviewignore` file.
+
+```bash
+# Interactive wizard (detects available API keys)
+agora init
+
+# Non-interactive with defaults (good for CI setup scripts)
+agora init --yes
+
+# Write config as YAML instead of JSON
+agora init --format yaml
+
+# Overwrite existing config
+agora init --force
+```
+
+### `agora doctor`
+
+Health check. Verifies Node.js version, config validity, and API key presence.
+
+```bash
+agora doctor
+```
+
+Exits with code `1` if any check fails.
+
+### `agora config`
+
+Display the loaded config (validates and pretty-prints `.ca/config.json`).
+
+```bash
+agora config
+```
+
+### `agora providers`
+
+List all supported providers and whether their API key is set in the environment.
+
+```bash
+agora providers
+```
+
+### `agora sessions`
+
+Manage past review sessions stored under `.ca/sessions/`.
+
+```bash
+# List recent sessions
+agora sessions list
+
+# Filter and sort
+agora sessions list --status completed --after 2026-03-01 --sort issues
+
+# Show a specific session
+agora sessions show 2026-03-13/001
+
+# Compare two sessions
+agora sessions diff 2026-03-10/001 2026-03-13/001
+
+# Show aggregate statistics
+agora sessions stats
+```
+
+### `agora tui`
+
+Launch the interactive terminal UI — review setup wizard, real-time pipeline progress, debate viewer, and results drill-down.
+
+```bash
+agora tui
+```
+
+---
 
 ## Configuration
 
-Example `codeagora.config.json`:
+CodeAgora reads `.ca/config.json` (or `.ca/config.yaml`) from the current working directory.
+
+Run `agora init` to generate a starter config, or create one manually:
 
 ```json
 {
   "reviewers": [
     {
-      "id": "reviewer-1",
-      "name": "Codex Reviewer",
-      "backend": "codex",
-      "model": "o4-mini",
+      "id": "r1",
+      "model": "llama-3.3-70b-versatile",
+      "backend": "api",
+      "provider": "groq",
       "enabled": true,
       "timeout": 120
     },
     {
-      "id": "reviewer-2",
-      "name": "Gemini Reviewer",
-      "backend": "gemini",
-      "model": "gemini-2.5-flash",
+      "id": "r2",
+      "model": "llama-3.3-70b-versatile",
+      "backend": "api",
+      "provider": "groq",
       "enabled": true,
       "timeout": 120
     }
   ],
-  "settings": {
-    "min_reviewers": 4,
-    "max_parallel": 6,
-    "output_format": "terminal",
-    "debate": {
+  "supporters": {
+    "pool": [
+      {
+        "id": "s1",
+        "model": "llama-3.3-70b-versatile",
+        "backend": "api",
+        "provider": "groq",
+        "enabled": true,
+        "timeout": 120
+      }
+    ],
+    "pickCount": 1,
+    "pickStrategy": "random",
+    "devilsAdvocate": {
+      "id": "da",
+      "model": "llama-3.3-70b-versatile",
+      "backend": "api",
+      "provider": "groq",
       "enabled": true,
-      "majority_threshold": 0.75,
-      "max_rounds": 3,
-      "early_stop": true
-    }
+      "timeout": 120
+    },
+    "personaPool": [".ca/personas/strict.md"],
+    "personaAssignment": "random"
+  },
+  "moderator": {
+    "model": "llama-3.3-70b-versatile",
+    "backend": "api",
+    "provider": "groq"
+  },
+  "discussion": {
+    "maxRounds": 4,
+    "registrationThreshold": {
+      "HARSHLY_CRITICAL": 1,
+      "CRITICAL": 1,
+      "WARNING": 2,
+      "SUGGESTION": null
+    },
+    "codeSnippetRange": 10
+  },
+  "errorHandling": {
+    "maxRetries": 2,
+    "forfeitThreshold": 0.7
   }
 }
 ```
 
-### Backend-Specific Model Formats
+### Key Config Fields
 
-| Backend | Model Format | Example |
-|---------|-------------|---------|
-| `codex` | Model name only | `"o4-mini"` |
-| `gemini` | Managed in settings | `"gemini-2.5-flash"` |
-| `opencode` | `provider/model` | `"github-copilot/claude-haiku-4.5"` |
+**`reviewers`** — L1 reviewer agents. Use different providers and models for heterogeneous coverage.
+
+**`supporters.pool`** — L2 agents that validate issues during discussion.
+
+**`supporters.devilsAdvocate`** — Agent that argues against the majority to surface overlooked counterarguments.
+
+**`supporters.personaPool`** — Markdown files describing reviewer personas (e.g., strict, pragmatic, security-focused). Assigned randomly or round-robin.
+
+**`discussion.registrationThreshold`** — Controls which severity levels trigger a discussion round:
+- `HARSHLY_CRITICAL: 1` — one reporter is enough
+- `CRITICAL: 1` — one reporter with supporter agreement
+- `WARNING: 2` — requires at least two reporters
+- `SUGGESTION: null` — skips discussion, goes to `suggestions.md`
+
+**`errorHandling.forfeitThreshold`** — If this fraction of reviewers fail, the pipeline aborts. Default `0.7` means the pipeline continues as long as 30% of reviewers succeed.
+
+### `.reviewignore`
+
+Place a `.reviewignore` file in your project root to exclude files from review. Uses the same glob syntax as `.gitignore`:
+
+```
+# Ignore generated files
+dist/**
+*.min.js
+coverage/**
+
+# Ignore test fixtures
+tests/fixtures/**
+```
+
+---
+
+## Output Formats
+
+| Format | Description |
+|--------|-------------|
+| `text` | Colored severity summary, top issues, and final decision (default) |
+| `json` | Full `PipelineResult` object — useful for scripting and CI |
+| `md` | Markdown table with severity counts |
+| `github` | GitHub-flavored markdown with emoji severity badges |
+
+**GitHub Actions example:**
+
+```yaml
+- name: Run CodeAgora review
+  run: |
+    git diff ${{ github.base_ref }}...${{ github.head_ref }} \
+      | agora review --output github --quiet
+  env:
+    GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+```
+
+---
+
+## Session Storage
+
+Every review run is saved under `.ca/sessions/`:
+
+```
+.ca/
+├── config.json
+└── sessions/
+    └── 2026-03-16/
+        └── 001/
+            ├── reviews/           # Raw L1 reviewer outputs
+            │   ├── r1-llama.md
+            │   └── r2-llama.md
+            ├── discussions/       # L2 debate transcripts
+            │   └── d001-sql-injection/
+            │       ├── round-1.md
+            │       ├── round-2.md
+            │       └── verdict.md
+            ├── unconfirmed/       # Issues below threshold
+            ├── suggestions.md     # Low-severity suggestions
+            ├── report.md          # Moderator final report
+            └── result.md          # Head agent final verdict
+```
+
+Use `agora sessions list` and `agora sessions show` to browse past sessions without re-running reviews.
+
+---
 
 ## Architecture
 
-### V2.0 (Current): Claude Code Orchestration
+### 3-Layer Pipeline
 
 ```
-Claude Code (Orchestrator + Head Agent)
-    ↓
-Backend CLIs (Codex, Gemini, OpenCode)
-    ↓
-codeagora-tools (Deterministic helpers)
-```
-
-**Key Components:**
-
-1. **Claude Code**: Orchestrates entire process, acts as head agent for final synthesis
-2. **Backend CLIs**: Execute reviewer LLMs (heterogeneous models)
-3. **codeagora-tools**: Deterministic logic (voting, scoring, anonymization)
-
-### Tools Package
-
-Six CLI commands for deterministic processing:
-
-- `parse-reviews` - Parse raw reviewer responses
-- `voting` - Apply 75% majority voting gate
-- `anonymize` - Remove reviewer names for debate
-- `score` - Trajectory scoring (5 regex patterns)
-- `early-stop` - Jaccard similarity check
-- `format-output` - Generate markdown reports
-
-## Development
-
-### Tools Package
-
-```bash
-cd tools
-
-# Development
-pnpm dev
-
-# Type check
-pnpm typecheck
-
-# Test
-pnpm test
-
-# Build
-pnpm build
+┌─────────────────────────────────────────────────┐
+│  L1: Parallel Reviewers                          │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐        │
+│  │ Reviewer │ │ Reviewer │ │ Reviewer │  ...    │
+│  │ (Groq)   │ │ (Google) │ │ (Mistral)│        │
+│  └────┬─────┘ └────┬─────┘ └────┬─────┘        │
+└───────┼────────────┼────────────┼───────────────┘
+        │            │            │
+        └────────────┼────────────┘
+                     │ Severity threshold routing
+┌────────────────────▼────────────────────────────┐
+│  L2: Discussion                                  │
+│  ┌─────────────┐   ┌──────────────────────────┐ │
+│  │  Moderator  │◄──│ Supporter Pool + Devil's  │ │
+│  │             │   │ Advocate (debate rounds)  │ │
+│  └─────┬───────┘   └──────────────────────────┘ │
+└────────┼────────────────────────────────────────┘
+         │ Consensus or forced decision
+┌────────▼────────────────────────────────────────┐
+│  L3: Head Agent                                  │
+│  Groups issues → Scans unconfirmed →             │
+│  ACCEPT / REJECT / NEEDS_HUMAN                   │
+└─────────────────────────────────────────────────┘
 ```
 
 ### Project Structure
 
 ```
-codeagora/
-├── .claude/skills/          # Claude Code skill
-│   ├── agora-review.md
-│   └── agora-review.json
-├── prompts/                 # Prompt templates
-│   ├── review-system.md
-│   ├── debate-round1.md
-│   ├── debate-round2.md
-│   └── debate-round3.md
-├── tools/                   # Helper tools package
-│   ├── src/
-│   │   ├── commands/        # CLI commands
-│   │   ├── types/           # TypeScript types
-│   │   └── utils/           # Parser utilities
-│   └── tests/
-└── codeagora.config.json    # Configuration
+src-v3/
+├── cli/           # CLI commands, formatters, options, error utilities
+├── tui/           # Interactive terminal UI (ink + React)
+├── pipeline/      # Pipeline orchestrator, progress emitter
+├── l0/            # Model registry, quality tracking (Thompson Sampling)
+├── l1/            # Parallel reviewer execution, provider registry
+├── l2/            # Discussion moderator, deduplication, threshold logic
+├── l3/            # Head verdict, issue grouping
+├── config/        # Config loading, validation, templates, migration
+├── providers/     # Provider registry, env var mapping
+├── session/       # Session management and storage
+├── github/        # PR diff extraction, GitHub comment posting
+├── plugins/       # Plugin system
+├── types/         # Shared TypeScript type definitions
+├── utils/         # Shared utilities
+└── tests/         # 67 test files, 1107 tests
 ```
 
-## Performance
+---
 
-**E2E Test Results** (Phase 3 validation):
+## Development
 
-| Metric | Result |
-|--------|--------|
-| 2 reviewers, 50-line diff | ~40 seconds |
-| Parse accuracy | 100% (0 failures) |
-| Issue detection | Caught all security vulnerabilities |
-| Debate reduction | 60-80% via majority voting gate |
+```bash
+cd src-v3
 
-**Key Metrics:**
-- **Majority gate efficiency**: 60-80% of issues bypass debate
-- **Individual reviewer time**: 12-26 seconds (model-dependent)
-- **Anti-conformity**: Preserves minority positions with strong technical evidence
-- **Projected**: 6 reviewers in parallel = ~30-35 seconds (limited by slowest reviewer)
+# Run all tests
+pnpm test
 
-## Known Limitations
+# Run a specific test file
+pnpm test -- l1-reviewer
 
-- **macOS timeout**: Requires `brew install coreutils` for timeout support (auto-detected fallback available)
-- **Gemini CLI output**: Responses wrapped in JSON format (auto-extracted by parser)
-- **Gemini stderr warnings**: Skill conflict warnings redirected to separate log files
-- **Codex CLI**: Requires OpenAI API key configured in environment
-- **OpenCode CLI**: Requires provider API keys in config (GitHub Copilot, etc.)
-- **Backend availability**: Review quality depends on enabled backends and API availability
+# Type check
+pnpm typecheck
 
-## Contributing
+# Build
+pnpm build
 
-We welcome contributions! Key areas:
+# Run CLI directly (no build needed)
+pnpm cli review path/to/diff.patch
+```
 
-- Additional backend integrations
-- Improved debate strategies
-- Enhanced scoring algorithms
-- Test coverage
+### Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Runtime | Node.js + TypeScript (strict) |
+| CLI framework | commander |
+| TUI | ink + React |
+| LLM SDK | Vercel AI SDK (multi-provider) |
+| Validation | zod |
+| Config | yaml / json |
+| Testing | vitest (1107 tests across 67 files) |
+| Build | tsup |
+| Prompts / wizards | @clack/prompts |
+| Spinner / colors | ora, picocolors |
+| GitHub API | @octokit/rest |
+
+---
+
+## Research Background
+
+CodeAgora's debate architecture is grounded in multi-agent reasoning research:
+
+- **Debate or Vote** (Du et al., 2023): Multi-agent debate improves factuality and reasoning quality over single-model responses.
+- **Free-MAD** (Chen et al., 2024): Anti-conformity prompts prevent groupthink and preserve minority positions backed by strong evidence.
+- **Heterogeneous Ensembles**: Different models have different error profiles — running them together improves coverage and reduces correlated false positives.
+
+---
 
 ## License
 
 MIT
-
-## References
-
-- Du, Y., et al. (2023). Improving Factuality and Reasoning in Language Models through Multiagent Debate.
-- Chen, W., et al. (2024). Free-MAD: Multi-Agent Debate with Free Selection of Opinions.
-// CodeAgora V2 test - 2026-02-16
