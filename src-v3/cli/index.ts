@@ -9,7 +9,7 @@ import { runPipeline } from '../pipeline/orchestrator.js';
 import { loadConfig } from '../config/loader.js';
 import path from 'path';
 import fs from 'fs/promises';
-import { runInit, runInitInteractive } from './commands/init.js';
+import { runInit, runInitInteractive, UserCancelledError } from './commands/init.js';
 import { runDoctor, formatDoctorReport } from './commands/doctor.js';
 import { listProviders, formatProviderList } from './commands/providers.js';
 import {
@@ -217,14 +217,22 @@ program
   .description('Initialize CodeAgora in current project')
   .option('--format <format>', 'Config format (json or yaml)', 'json')
   .option('--force', 'Overwrite existing files', false)
-  .option('--yes, -y', 'Skip prompts, use defaults', false)
+  .option('-y, --yes', 'Skip prompts, use defaults', false)
   .action(async (options: { format: string; force: boolean; yes: boolean }) => {
     try {
       const format = options.format === 'yaml' ? 'yaml' : 'json';
       const isInteractive = !options.yes && process.stdin.isTTY;
       let result;
       if (isInteractive) {
-        result = await runInitInteractive({ format, force: options.force, baseDir: process.cwd() });
+        try {
+          result = await runInitInteractive({ format, force: options.force, baseDir: process.cwd() });
+        } catch (err) {
+          if (err instanceof UserCancelledError) {
+            console.log(err.message);
+            return;
+          }
+          throw err;
+        }
       } else {
         result = await runInit({ format, force: options.force, baseDir: process.cwd() });
       }

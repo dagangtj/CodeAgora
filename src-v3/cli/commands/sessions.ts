@@ -47,6 +47,7 @@ export interface SessionStats {
   completed: number;
   failed: number;
   inProgress: number;
+  /** Percentage 0-100, one decimal precision */
   successRate: number;
   severityDistribution: Record<string, number>;
 }
@@ -71,7 +72,7 @@ async function readJsonFile(filePath: string): Promise<Record<string, unknown> |
   }
 }
 
-function extractIssues(verdict: Record<string, unknown>): string[] {
+function extractIssueObjects(verdict: Record<string, unknown>): Array<{ title: string; severity?: string }> {
   // Try common verdict shapes: issues[], findings[], items[]
   for (const key of ['issues', 'findings', 'items']) {
     const val = verdict[key];
@@ -79,13 +80,20 @@ function extractIssues(verdict: Record<string, unknown>): string[] {
       return val.map((item: unknown) => {
         if (typeof item === 'object' && item !== null) {
           const obj = item as Record<string, unknown>;
-          return String(obj['title'] ?? obj['description'] ?? obj['message'] ?? JSON.stringify(item));
+          return {
+            title: String(obj['title'] ?? obj['description'] ?? obj['message'] ?? JSON.stringify(item)),
+            severity: typeof obj['severity'] === 'string' ? obj['severity'] : undefined,
+          };
         }
-        return String(item);
+        return { title: String(item) };
       });
     }
   }
   return [];
+}
+
+function extractIssues(verdict: Record<string, unknown>): string[] {
+  return extractIssueObjects(verdict).map((o) => o.title);
 }
 
 // ============================================================================
@@ -106,7 +114,7 @@ export async function listSessions(
   let dateDirs: string[];
   try {
     const entries = await fs.readdir(sessionsDir);
-    dateDirs = entries.sort().reverse(); // newest date first
+    dateDirs = entries.filter(d => !d.includes('..')).sort().reverse(); // newest date first
   } catch {
     return [];
   }
@@ -178,16 +186,7 @@ export async function listSessions(
     const withCounts = await Promise.all(
       filtered.map(async (entry) => {
         const verdict = await readJsonFile(path.join(entry.dirPath, 'head-verdict.json'));
-        let count = 0;
-        if (verdict) {
-          for (const key of ['issues', 'findings', 'items']) {
-            const val = verdict[key];
-            if (Array.isArray(val)) {
-              count = val.length;
-              break;
-            }
-          }
-        }
+        const count = verdict ? extractIssueObjects(verdict).length : 0;
         return { entry, count };
       })
     );
@@ -208,7 +207,7 @@ export async function getSessionStats(baseDir: string): Promise<SessionStats> {
   let dateDirs: string[];
   try {
     const entries = await fs.readdir(sessionsDir);
-    dateDirs = entries.sort();
+    dateDirs = entries.filter(d => !d.includes('..')).sort();
   } catch {
     return {
       totalSessions: 0,
@@ -266,20 +265,9 @@ export async function getSessionStats(baseDir: string): Promise<SessionStats> {
 
       const verdict = await readJsonFile(path.join(sessionPath, 'head-verdict.json'));
       if (verdict) {
-        for (const key of ['issues', 'findings', 'items']) {
-          const val = verdict[key];
-          if (Array.isArray(val)) {
-            for (const item of val) {
-              if (typeof item === 'object' && item !== null) {
-                const obj = item as Record<string, unknown>;
-                const severity = typeof obj['severity'] === 'string'
-                  ? obj['severity']
-                  : 'unknown';
-                severityDistribution[severity] = (severityDistribution[severity] ?? 0) + 1;
-              }
-            }
-            break;
-          }
+        for (const issue of extractIssueObjects(verdict)) {
+          const severity = issue.severity ?? 'unknown';
+          severityDistribution[severity] = (severityDistribution[severity] ?? 0) + 1;
         }
       }
     }
@@ -413,24 +401,7 @@ export function formatSessionDetail(detail: SessionDetail): string {
   }
 
   if (detail.verdict) {
-    const unified: Array<{ title: string; severity?: string }> = [];
-    for (const key of ['issues', 'findings', 'items']) {
-      const val = (detail.verdict as Record<string, unknown>)[key];
-      if (Array.isArray(val)) {
-        for (const item of val) {
-          if (typeof item === 'object' && item !== null) {
-            const obj = item as Record<string, unknown>;
-            unified.push({
-              title: String(obj['title'] ?? obj['description'] ?? obj['message'] ?? JSON.stringify(item)),
-              severity: typeof obj['severity'] === 'string' ? obj['severity'] : undefined,
-            });
-          } else {
-            unified.push({ title: String(item) });
-          }
-        }
-        break;
-      }
-    }
+    const unified = extractIssueObjects(detail.verdict);
     lines.push(`Issues:  ${unified.length}`);
     if (unified.length > 0) {
       for (const { title, severity } of unified.slice(0, 5)) {
@@ -488,7 +459,7 @@ export function formatSessionStats(stats: SessionStats): string {
       : '';
 
   lines.push(`Total sessions:  ${stats.totalSessions}`);
-  lines.push(`Completed:       ${statusColor.pass(String(stats.completed))}${pct(stats.completed)}`);
+  lines.push(`Completed:       ${statusColor.pass(String(stats.completed))} (${stats.successRate.toFixed(1)}%)`);
   lines.push(`Failed:          ${statusColor.fail(String(stats.failed))}${pct(stats.failed)}`);
   lines.push(`In Progress:     ${statusColor.warn(String(stats.inProgress))}${pct(stats.inProgress)}`);
 

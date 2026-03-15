@@ -33,6 +33,19 @@ export interface CustomConfigParams {
   discussion: boolean;
 }
 
+export interface GeneratedConfig {
+  reviewers: Array<{ id: string; model: string; backend: string; provider: string; enabled: boolean; timeout: number }>;
+  supporters: { pool: any[]; pickCount: number; pickStrategy: string; devilsAdvocate: any; personaPool: string[]; personaAssignment: string };
+  moderator: { model: string; backend: string; provider: string };
+  discussion: { maxRounds: number; registrationThreshold: Record<string, number | null>; codeSnippetRange: number };
+  errorHandling: { maxRetries: number; forfeitThreshold: number };
+  [key: string]: unknown;
+}
+
+export class UserCancelledError extends Error {
+  constructor() { super('Setup cancelled by user.'); this.name = 'UserCancelledError'; }
+}
+
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -79,8 +92,12 @@ async function writeFile(
 /**
  * Build a config object from user selections (wizard or programmatic).
  */
-export function buildCustomConfig(params: CustomConfigParams): object {
+export function buildCustomConfig(params: CustomConfigParams): GeneratedConfig {
   const { provider, model, reviewerCount, discussion } = params;
+
+  if (reviewerCount < 1 || reviewerCount > 10) {
+    throw new Error(`reviewerCount must be between 1 and 10, got ${reviewerCount}`);
+  }
 
   const agentBase = { model, backend: 'api', provider, enabled: true, timeout: 120 };
 
@@ -188,7 +205,7 @@ export async function runInitInteractive(options: InitOptions): Promise<InitResu
   });
   if (p.isCancel(formatSelection)) {
     p.cancel('Setup cancelled.');
-    process.exit(0);
+    throw new UserCancelledError();
   }
   const format = formatSelection as 'json' | 'yaml';
 
@@ -203,7 +220,7 @@ export async function runInitInteractive(options: InitOptions): Promise<InitResu
   });
   if (p.isCancel(providerSelection)) {
     p.cancel('Setup cancelled.');
-    process.exit(0);
+    throw new UserCancelledError();
   }
   const provider = providerSelection as string;
 
@@ -219,7 +236,7 @@ export async function runInitInteractive(options: InitOptions): Promise<InitResu
   });
   if (p.isCancel(countSelection)) {
     p.cancel('Setup cancelled.');
-    process.exit(0);
+    throw new UserCancelledError();
   }
   const reviewerCount = parseInt(countSelection as string, 10);
 
@@ -232,7 +249,7 @@ export async function runInitInteractive(options: InitOptions): Promise<InitResu
   });
   if (p.isCancel(modelSelection)) {
     p.cancel('Setup cancelled.');
-    process.exit(0);
+    throw new UserCancelledError();
   }
   const model = (modelSelection as string) || defaultModel;
 
@@ -243,7 +260,7 @@ export async function runInitInteractive(options: InitOptions): Promise<InitResu
   });
   if (p.isCancel(discussionSelection)) {
     p.cancel('Setup cancelled.');
-    process.exit(0);
+    throw new UserCancelledError();
   }
   const discussion = discussionSelection as boolean;
 
