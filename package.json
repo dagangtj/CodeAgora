@@ -1,8 +1,21 @@
 {
-  "name": "codeagora-v3",
-  "version": "3.0.0",
+  "name": "codeagora",
+  "version": "1.0.0-rc.1",
   "type": "module",
-  "description": "CodeAgora V3 - 3-layer multi-agent code review",
+  "description": "Multi-LLM code review pipeline — parallel reviewers, structured debate, consensus verdict",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/justn-hyeok/CodeAgora"
+  },
+  "keywords": ["code-review", "llm", "multi-agent", "cli", "tui", "ai", "static-analysis"],
+  "files": [
+    "src/dist/**/*.js",
+    "src/dist/**/*.d.ts",
+    "src/data/**",
+    "README.md",
+    "LICENSE"
+  ],
   "bin": {
     "codeagora": "./src/dist/cli/index.js",
     "agora": "./src/dist/cli/index.js"
