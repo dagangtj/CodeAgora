@@ -106,6 +106,8 @@ function buildCommand(
       return buildGeminiCommand(model, promptFile);
     case 'claude':
       return buildClaudeCommand(model, promptFile);
+    case 'copilot':
+      return buildCopilotCommand(model, promptFile);
     default:
       throw new Error(`Unsupported backend: ${backend}`);
   }
@@ -136,6 +138,12 @@ function buildGeminiCommand(model: string, promptFile: string): string {
   // Gemini CLI: pipe prompt via stdin to avoid shell injection via diff content
   // Format: cat prompt.txt | gemini -m model
   return `cat "${promptFile}" | gemini -m ${sanitizeShellArg(model, 'model')}`;
+}
+
+function buildCopilotCommand(model: string, promptFile: string): string {
+  // GitHub Copilot CLI: pipe prompt via stdin
+  // Format: cat prompt.txt | gh copilot -m model
+  return `cat "${promptFile}" | gh copilot suggest --model ${sanitizeShellArg(model, 'model')}`;
 }
 
 function buildClaudeCommand(model: string, promptFile: string): string {

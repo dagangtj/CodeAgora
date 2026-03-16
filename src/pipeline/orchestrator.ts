@@ -103,8 +103,7 @@ export async function runPipeline(input: PipelineInput, progress?: ProgressEmitt
     progress?.stageComplete('init', 'Config loaded');
 
     // === DIFF CHUNKING ===
-    // TODO: read maxTokens from config once config schema supports it
-    const chunks = chunkDiff(diffContent, { maxTokens: 8000 });
+    const chunks = chunkDiff(diffContent, { maxTokens: config.chunking?.maxTokens ?? 8000 });
 
     // Guard: empty diff produces no chunks
     if (chunks.length === 0) {

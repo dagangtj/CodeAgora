@@ -10,7 +10,7 @@ import { ModelRouterConfigSchema } from './l0.js';
 // Backend Types
 // ============================================================================
 
-export const BackendSchema = z.enum(['opencode', 'codex', 'gemini', 'claude', 'api']);
+export const BackendSchema = z.enum(['opencode', 'codex', 'gemini', 'claude', 'copilot', 'api']);
 export type Backend = z.infer<typeof BackendSchema>;
 
 // ============================================================================
@@ -172,7 +172,7 @@ export const NotificationsConfigSchema = z.object({
 });
 export type NotificationsConfig = z.infer<typeof NotificationsConfigSchema>;
 
-export const GitHubConfigSchema = z.object({
+export const GitHubIntegrationSchema = z.object({
   humanReviewers: z.array(z.string()).default([]),
   humanTeams: z.array(z.string()).default([]),
   needsHumanLabel: z.string().default('needs-human-review'),
@@ -180,7 +180,12 @@ export const GitHubConfigSchema = z.object({
   collapseDiscussions: z.boolean().default(true),
   sarifOutputPath: z.string().optional(),
 });
-export type GitHubConfig = z.infer<typeof GitHubConfigSchema>;
+export type GitHubIntegrationConfig = z.infer<typeof GitHubIntegrationSchema>;
+
+export const ChunkingConfigSchema = z.object({
+  maxTokens: z.number().int().positive().default(8000),
+});
+export type ChunkingConfig = z.infer<typeof ChunkingConfigSchema>;
 
 export const ConfigSchema = z.object({
   reviewers: ReviewersFieldSchema,
@@ -188,9 +193,10 @@ export const ConfigSchema = z.object({
   moderator: ModeratorConfigSchema,
   discussion: DiscussionSettingsSchema,
   errorHandling: ErrorHandlingSchema,
+  chunking: ChunkingConfigSchema.optional(),
   modelRouter: ModelRouterConfigSchema.optional(),
   notifications: NotificationsConfigSchema.optional(),
-  github: GitHubConfigSchema.optional(),
+  github: GitHubIntegrationSchema.optional(),
 });
 export type Config = z.infer<typeof ConfigSchema>;
 

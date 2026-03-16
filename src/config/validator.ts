@@ -20,7 +20,7 @@ export interface ValidationResult {
 // Supported Backends
 // ============================================================================
 
-const SUPPORTED_BACKENDS = new Set(['opencode', 'codex', 'gemini', 'claude', 'api']);
+const SUPPORTED_BACKENDS = new Set(['opencode', 'codex', 'gemini', 'claude', 'copilot', 'api']);
 
 // ============================================================================
 // Validator

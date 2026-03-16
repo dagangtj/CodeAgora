@@ -389,6 +389,27 @@ function checkConsensus(round: DiscussionRound, discussion: Discussion): Consens
     };
   }
 
+  // Majority agree (>50% excluding neutrals) — preserve original severity
+  const agreeCount = supporters.filter((s) => s.stance === 'agree').length;
+  const disagreeCount = supporters.filter((s) => s.stance === 'disagree').length;
+  const decidingVotes = agreeCount + disagreeCount;
+
+  if (decidingVotes > 0 && agreeCount > decidingVotes / 2) {
+    return {
+      reached: true,
+      severity: discussion.severity as ConsensusResult['severity'],
+      reasoning: `Majority consensus (${agreeCount}/${supporters.length} agree)`,
+    };
+  }
+
+  if (decidingVotes > 0 && disagreeCount > decidingVotes / 2) {
+    return {
+      reached: true,
+      severity: 'DISMISSED',
+      reasoning: `Majority rejected (${disagreeCount}/${supporters.length} disagree)`,
+    };
+  }
+
   return { reached: false };
 }
 
