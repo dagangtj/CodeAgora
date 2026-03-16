@@ -4,11 +4,13 @@
  */
 
 import type { PipelineResult } from '../../pipeline/orchestrator.js';
+import type { EvidenceDocument } from '../../types/core.js';
 import { SEVERITY_ORDER } from '../../types/core.js';
 import { severityColor, decisionColor, dim, bold } from '../utils/colors.js';
 import { t } from '../../i18n/index.js';
+import { formatAnnotated } from './annotated-output.js';
 
-export type OutputFormat = 'text' | 'json' | 'md' | 'github';
+export type OutputFormat = 'text' | 'json' | 'md' | 'github' | 'annotated';
 
 // ============================================================================
 // Text format (default)
@@ -197,8 +199,16 @@ export function formatGithub(result: PipelineResult): string {
 
 /**
  * Format a PipelineResult using the requested output format.
+ *
+ * For the 'annotated' format, pass diffContent and evidenceDocs via options.
+ * v1 limitation: if evidenceDocs is not provided, falls back to summary.topIssues
+ * which only contains up to 5 issues.
  */
-export function formatOutput(result: PipelineResult, format: OutputFormat): string {
+export function formatOutput(
+  result: PipelineResult,
+  format: OutputFormat,
+  options?: { diffContent?: string; evidenceDocs?: EvidenceDocument[] }
+): string {
   switch (format) {
     case 'text':
       return formatText(result);
@@ -208,6 +218,13 @@ export function formatOutput(result: PipelineResult, format: OutputFormat): stri
       return formatMarkdown(result);
     case 'github':
       return formatGithub(result);
+    case 'annotated': {
+      const diff = options?.diffContent ?? '';
+      // Use provided evidenceDocs; fall back to topIssues cast as EvidenceDocument[]
+      const docs: EvidenceDocument[] = options?.evidenceDocs ??
+        (result.summary?.topIssues as unknown as EvidenceDocument[] ?? []);
+      return formatAnnotated(diff, docs);
+    }
     default: {
       // Exhaustive check — TypeScript will warn if a case is missing
       const _exhaustive: never = format;

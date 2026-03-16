@@ -52,7 +52,7 @@ program
   .description('Run code review pipeline on a diff file')
   .argument('[diff-path]', 'Path to the diff file (use - for stdin)')
   .option('--dry-run', 'Validate config without running review')
-  .option('--output <format>', 'Output format: text, json, md, github', 'text')
+  .option('--output <format>', 'Output format: text, json, md, github, annotated', 'text')
   .option('--provider <name>', 'Override provider for auto reviewers')
   .option('--model <name>', 'Override model for auto reviewers')
   .option('--verbose', 'Show detailed telemetry output', false)
@@ -80,7 +80,7 @@ program
         options.verbose = false; // --quiet takes precedence
       }
 
-      const outputFormat = (['text', 'json', 'md', 'github'].includes(options.output)
+      const outputFormat = (['text', 'json', 'md', 'github', 'annotated'].includes(options.output)
         ? options.output : 'text') as OutputFormat;
 
       // Handle stdin
@@ -185,7 +185,17 @@ program
       const result = await runPipeline(pipelineOptions, progress);
       spinner?.stop();
 
-      console.log(formatOutput(result, outputFormat));
+      // For annotated format, read the original diff file and pass it through
+      let annotatedOptions: { diffContent?: string } | undefined;
+      if (outputFormat === 'annotated') {
+        try {
+          const diffContent = await fs.readFile(resolvedPath, 'utf-8');
+          annotatedOptions = { diffContent };
+        } catch {
+          // If we can't read the diff, formatAnnotated will show "(no diff content)"
+        }
+      }
+      console.log(formatOutput(result, outputFormat, annotatedOptions));
 
       // Send notifications if requested and pipeline succeeded with a summary
       if (result.status === 'success' && result.summary) {

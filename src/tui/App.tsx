@@ -10,6 +10,7 @@ import { SessionsScreen } from './screens/SessionsScreen.js';
 import { ConfigScreen } from './screens/ConfigScreen.js';
 import { ResultsScreen } from './screens/ResultsScreen.js';
 import { DebateScreen } from './screens/DebateScreen.js';
+import { ContextScreen } from './screens/ContextScreen.js';
 import type { Screen } from './hooks/useRouter.js';
 import type { ReviewSetupParams } from './screens/ReviewSetupScreen.js';
 import type { PipelineResult } from '../pipeline/orchestrator.js';
@@ -19,6 +20,14 @@ export function App(): React.JSX.Element {
   const { screen, navigate, goBack, canGoBack } = useRouter();
   const [reviewParams, setReviewParams] = useState<ReviewSetupParams | undefined>();
   const [pipelineResult, setPipelineResult] = useState<PipelineResult | undefined>();
+  const [diffContent, setDiffContent] = useState<string>('');
+  const [evidenceDocs, setEvidenceDocs] = useState<Array<{
+    severity: string;
+    filePath: string;
+    lineRange: [number, number];
+    issueTitle: string;
+    suggestion?: string;
+  }>>([]);
 
   useInput((input) => {
     if (input === 'q') {
@@ -42,6 +51,20 @@ export function App(): React.JSX.Element {
 
   function handlePipelineComplete(result: PipelineResult): void {
     setPipelineResult(result);
+    // Populate evidenceDocs from topIssues for context view
+    const issues = result.summary?.topIssues ?? [];
+    setEvidenceDocs(issues.map(iss => ({
+      severity: iss.severity,
+      filePath: iss.filePath,
+      lineRange: iss.lineRange,
+      issueTitle: iss.title,
+    })));
+    // Read diffContent from diffPath if available
+    if (reviewParams?.diffPath) {
+      import('fs/promises').then(fs =>
+        fs.readFile(reviewParams.diffPath, 'utf-8').then(setDiffContent).catch(() => setDiffContent(''))
+      );
+    }
     navigate('results');
   }
 
@@ -75,8 +98,22 @@ export function App(): React.JSX.Element {
         );
       case 'results':
         return pipelineResult
-          ? <ResultsScreen result={pipelineResult} onHome={() => navigate('home')} />
+          ? (
+            <ResultsScreen
+              result={pipelineResult}
+              onHome={() => navigate('home')}
+              onViewContext={() => navigate('context')}
+            />
+          )
           : <HomeScreen onNavigate={navigate} onQuit={exit} />;
+      case 'context':
+        return (
+          <ContextScreen
+            diffContent={diffContent}
+            evidenceDocs={evidenceDocs}
+            onBack={() => navigate('results')}
+          />
+        );
       case 'sessions':
         return <SessionsScreen />;
       case 'config':
