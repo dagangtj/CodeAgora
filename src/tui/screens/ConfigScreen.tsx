@@ -3,6 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import fs from 'fs';
 import path from 'path';
 import { loadConfigFrom } from '../../config/loader.js';
+import { t } from '../../i18n/index.js';
 import { validateConfig } from '../../types/config.js';
 import type { Config } from '../../types/config.js';
 import { ReviewersTab } from './config/ReviewersTab.js';
@@ -13,13 +14,15 @@ import { EnvSetup } from './config/EnvSetup.js';
 
 type TabName = 'reviewers' | 'supporters' | 'moderator' | 'presets' | 'env';
 const TABS: TabName[] = ['reviewers', 'supporters', 'moderator', 'presets', 'env'];
-const TAB_LABELS: Record<TabName, string> = {
-  reviewers: 'Reviewers',
-  supporters: 'Supporters',
-  moderator: 'Moderator',
-  presets: 'Presets',
-  env: 'API Keys',
-};
+function getTabLabels(): Record<TabName, string> {
+  return {
+    reviewers: t('config.tabs.reviewers'),
+    supporters: t('config.tabs.supporters'),
+    moderator: t('config.tabs.moderator'),
+    presets: t('config.tabs.presets'),
+    env: t('config.tabs.apiKeys'),
+  };
+}
 
 interface ConfigState {
   config: Config | null;
@@ -92,7 +95,7 @@ export function ConfigScreen(): React.JSX.Element {
     return (
       <Box flexDirection="column" padding={1}>
         <Text bold>Configuration</Text>
-        <Text color="yellow">No config found. Run <Text bold>agora init</Text> or apply a Preset from the Config tab.</Text>
+        <Text color="yellow">{t('config.noConfig')}</Text>
         {state.error ? <Text dimColor>{state.error}</Text> : null}
         <Box marginTop={1}>
           <Text dimColor>q: back</Text>
@@ -116,7 +119,7 @@ export function ConfigScreen(): React.JSX.Element {
                 color={active ? 'cyan' : undefined}
                 underline={active}
               >
-                {i + 1}. {TAB_LABELS[tab]}
+                {i + 1}. {getTabLabels()[tab]}
               </Text>
             </Box>
           );

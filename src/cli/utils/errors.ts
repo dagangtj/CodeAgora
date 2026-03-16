@@ -3,6 +3,7 @@
  */
 
 import { statusColor, dim } from './colors.js';
+import { t } from '../../i18n/index.js';
 
 export interface CliError {
   message: string;
@@ -15,23 +16,23 @@ export function classifyError(error: Error): CliError {
 
   // Config not found
   if (msg.includes('Config file not found') || msg.includes('config.json')) {
-    return { message: msg, hint: "Run 'agora init' to create a config file.", exitCode: 2 };
+    return { message: msg, hint: t('error.configHint'), exitCode: 2 };
   }
   // API key issues
   if ((msg.includes('API') || msg.includes('api')) && (msg.includes('key') || msg.includes('KEY'))) {
-    return { message: msg, hint: "Check 'agora providers' for required API keys.", exitCode: 2 };
+    return { message: msg, hint: t('error.apiKeyHint'), exitCode: 2 };
   }
   // Reviewer failures
   if (msg.includes('forfeited') || msg.includes('Too many reviewers')) {
-    return { message: msg, hint: "Run 'agora doctor' to check your setup.", exitCode: 3 };
+    return { message: msg, hint: t('error.doctorHint'), exitCode: 3 };
   }
   // File not found
   if (msg.includes('ENOENT') || msg.includes('no such file') || msg.includes('not found')) {
-    return { message: msg, hint: 'Check the file path and try again.', exitCode: 3 };
+    return { message: msg, hint: t('error.pathHint'), exitCode: 3 };
   }
   // YAML/JSON parse errors
   if (msg.includes('parse error') || msg.includes('JSON') || msg.includes('YAML')) {
-    return { message: msg, hint: 'Check your config file syntax.', exitCode: 2 };
+    return { message: msg, hint: t('error.syntaxHint'), exitCode: 2 };
   }
   // Default
   return { message: msg, exitCode: 3 };

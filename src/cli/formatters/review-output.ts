@@ -6,6 +6,7 @@
 import type { PipelineResult } from '../../pipeline/orchestrator.js';
 import { SEVERITY_ORDER } from '../../types/core.js';
 import { severityColor, decisionColor, dim, bold } from '../utils/colors.js';
+import { t } from '../../i18n/index.js';
 
 export type OutputFormat = 'text' | 'json' | 'md' | 'github';
 
@@ -20,15 +21,15 @@ export function formatText(result: PipelineResult): string {
   const lines: string[] = [];
 
   if (result.status === 'error') {
-    lines.push(`Review failed: ${result.error ?? 'unknown error'}`);
-    lines.push(dim(`  Session: ${result.date}/${result.sessionId}`));
+    lines.push(t('review.failed', { error: result.error ?? 'unknown error' }));
+    lines.push(dim(`  ${t('review.session', { date: result.date, sessionId: result.sessionId })}`));
     return lines.join('\n');
   }
 
   if (!result.summary) {
     // Fallback: no summary available
-    lines.push('Review complete!');
-    lines.push(`  Session: ${result.date}/${result.sessionId}`);
+    lines.push(t('review.complete'));
+    lines.push(`  ${t('review.session', { date: result.date, sessionId: result.sessionId })}`);
     lines.push(`  Output: .ca/sessions/${result.date}/${result.sessionId}/`);
     return lines.join('\n');
   }
@@ -68,13 +69,13 @@ export function formatText(result: PipelineResult): string {
   if (s.totalDiscussions > 0) {
     lines.push(
       dim(
-        `Discussions: ${s.totalDiscussions} total, ${s.resolved} resolved, ${s.escalated} escalated`
+        t('review.discussions', { total: s.totalDiscussions, resolved: s.resolved, escalated: s.escalated })
       )
     );
   }
 
   // Session reference
-  lines.push(dim(`Session: ${result.date}/${result.sessionId}`));
+  lines.push(dim(t('review.session', { date: result.date, sessionId: result.sessionId })));
 
   return lines.join('\n');
 }

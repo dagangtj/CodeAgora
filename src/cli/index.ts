@@ -22,6 +22,7 @@ import { formatError, classifyError } from './utils/errors.js';
 import { sendNotifications, type NotificationPayload } from '../notifications/webhook.js';
 import ora from 'ora';
 import { ProgressEmitter } from '../pipeline/progress.js';
+import { setLocale, detectLocale } from '../i18n/index.js';
 
 /**
  * Derive the display name from the invoked binary path.
@@ -39,7 +40,12 @@ const program = new Command();
 program
   .name(displayName)
   .description('Multi-LLM collaborative code review CLI')
-  .version('3.0.0');
+  .version('3.0.0')
+  .option('--lang <locale>', 'language (en/ko)')
+  .hook('preAction', (thisCommand) => {
+    const opts = thisCommand.opts() as { lang?: string };
+    setLocale((opts.lang === 'ko' || opts.lang === 'en') ? opts.lang : detectLocale());
+  });
 
 program
   .command('review')

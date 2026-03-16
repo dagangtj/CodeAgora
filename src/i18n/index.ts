@@ -1,0 +1,52 @@
+/**
+ * Lightweight i18n module — no external dependencies.
+ * Supports 'en' (default) and 'ko' locales.
+ */
+
+import { createRequire } from 'module';
+
+type Locale = 'en' | 'ko';
+
+let currentLocale: Locale = 'en';
+
+// Use createRequire for reliable JSON loading across all module configs
+const _require = createRequire(import.meta.url);
+const locales: Record<Locale, Record<string, string>> = {
+  en: _require('./locales/en.json') as Record<string, string>,
+  ko: _require('./locales/ko.json') as Record<string, string>,
+};
+
+export function setLocale(lang: Locale): void {
+  currentLocale = lang;
+}
+
+export function getLocale(): Locale {
+  return currentLocale;
+}
+
+/**
+ * Translate a key, with optional parameter interpolation.
+ * Falls back to English if the key is missing in the current locale.
+ * Falls back to the key itself if missing in English too.
+ */
+export function t(key: string, params?: Record<string, string | number>): string {
+  let text = locales[currentLocale]?.[key] ?? locales.en[key] ?? key;
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+    }
+  }
+  return text;
+}
+
+/**
+ * Detect locale from environment.
+ * Priority: CODEAGORA_LANG env var → system LANG → fallback 'en'.
+ */
+export function detectLocale(): Locale {
+  const envLang = process.env['CODEAGORA_LANG'];
+  if (envLang === 'ko' || envLang === 'en') return envLang;
+  const sysLang = process.env['LANG'] ?? process.env['LANGUAGE'] ?? '';
+  if (sysLang.startsWith('ko')) return 'ko';
+  return 'en';
+}
