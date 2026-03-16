@@ -6,13 +6,13 @@
 - **GitHub Actions integration** — inline PR review comments, commit status checks, SARIF output
 - **15 API providers** — OpenAI, Anthropic, Google, Groq, DeepSeek, Qwen, Mistral, xAI, Together, Cerebras, NVIDIA NIM, ZAI, OpenRouter, GitHub Models, GitHub Copilot
 - **5 CLI backends** — claude, codex, gemini, copilot, opencode
-- **LLM-based Head verdict** — L3 Head agent uses LLM to evaluate reasoning quality (rule-based fallback)
+- **LLM-based Head verdict** `[experimental]` — L3 Head agent uses LLM to evaluate reasoning quality (rule-based fallback)
 - **Majority consensus** — checkConsensus handles >50% agree/disagree votes
-- **Semantic file grouping** — import-relationship-based clustering for reviewer distribution
+- **Semantic file grouping** `[experimental]` — import-relationship-based clustering for reviewer distribution
 - **Reviewer personas** — strict, pragmatic, security-focused persona files
 - **Configurable chunking** — maxTokens settable via config
-- **NEEDS_HUMAN handling** — auto-request human reviewers + add labels
-- **SARIF 2.1.0 output** — GitHub Code Scanning compatible
+- **NEEDS_HUMAN handling** `[experimental]` — auto-request human reviewers + add labels
+- **SARIF 2.1.0 output** `[experimental]` — GitHub Code Scanning compatible
 - **Secure credentials** — API keys stored in ~/.config/codeagora/credentials
 - **TUI paste support** — clipboard paste works in all text inputs
 - **CLI --pr flag** — review GitHub PRs directly from command line

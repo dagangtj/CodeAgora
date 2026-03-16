@@ -101,7 +101,7 @@ Set at least one provider API key in your environment:
 | NVIDIA NIM | `NVIDIA_API_KEY` |
 | ZAI | `ZAI_API_KEY` |
 | GitHub Models | `GITHUB_TOKEN` |
-| GitHub Copilot | `GITHUB_COPILOT_TOKEN` |
+| GitHub Copilot | `GITHUB_COPILOT_TOKEN` | `[experimental]` |
 
 API keys are securely stored in `~/.config/codeagora/credentials` (not in your project directory). Set them via the TUI or directly:
 
@@ -329,6 +329,8 @@ Run `agora init` to generate a starter config, or create one manually:
 **`supporters.devilsAdvocate`** — Agent that argues against the majority to surface overlooked counterarguments.
 
 **`supporters.personaPool`** — Markdown files describing reviewer personas (e.g., strict, pragmatic, security-focused). Assigned randomly or round-robin.
+
+**`head`** — L3 Head agent config. When set, uses LLM to evaluate reasoning quality instead of rule-based counting. `[experimental]`
 
 **`discussion.registrationThreshold`** — Controls which severity levels trigger a discussion round:
 - `HARSHLY_CRITICAL: 1` — one reporter is enough

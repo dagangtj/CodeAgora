@@ -6,13 +6,13 @@
 - **GitHub Actions 통합** — PR 인라인 리뷰 코멘트, commit status check, SARIF 출력
 - **15개 API 프로바이더** — OpenAI, Anthropic, Google, Groq, DeepSeek, Qwen, Mistral, xAI, Together, Cerebras, NVIDIA NIM, ZAI, OpenRouter, GitHub Models, GitHub Copilot
 - **5개 CLI 백엔드** — claude, codex, gemini, copilot, opencode
-- **LLM 기반 Head 판결** — L3 Head 에이전트가 LLM으로 추론 품질 평가 (규칙 기반 fallback)
+- **LLM 기반 Head 판결** `[experimental]` — L3 Head 에이전트가 LLM으로 추론 품질 평가 (규칙 기반 fallback)
 - **과반수 합의** — checkConsensus가 >50% agree/disagree 투표 처리
-- **의미적 파일 그룹핑** — import 관계 기반 클러스터링
+- **의미적 파일 그룹핑** `[experimental]` — import 관계 기반 클러스터링
 - **리뷰어 페르소나** — strict, pragmatic, security-focused 페르소나 파일
 - **설정 가능한 청킹** — maxTokens를 config에서 설정 가능
-- **NEEDS_HUMAN 처리** — 자동 리뷰어 요청 + 라벨 추가
-- **SARIF 2.1.0 출력** — GitHub Code Scanning 호환
+- **NEEDS_HUMAN 처리** `[experimental]` — 자동 리뷰어 요청 + 라벨 추가
+- **SARIF 2.1.0 출력** `[experimental]` — GitHub Code Scanning 호환
 - **안전한 크레덴셜** — API 키를 ~/.config/codeagora/credentials에 저장
 - **TUI 붙여넣기 지원** — 모든 텍스트 입력에서 클립보드 붙여넣기 동작
 - **CLI --pr 플래그** — 커맨드라인에서 직접 GitHub PR 리뷰
