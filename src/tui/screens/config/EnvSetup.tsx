@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
+import path from 'path';
 import { PROVIDER_ENV_VARS } from '../../../providers/env-vars.js';
 
 // ============================================================================
@@ -18,14 +19,17 @@ interface Props {
 // ============================================================================
 
 function addEnvVar(key: string, value: string): void {
-  const envPath = '.env';
+  const sanitized = value.replace(/[\r\n]/g, '');
+  const envPath = path.join(process.cwd(), '.env');
   const existing = existsSync(envPath) ? readFileSync(envPath, 'utf-8') : '';
-  if (existing.includes(`${key}=`)) {
-    const updated = existing.replace(new RegExp(`^${key}=.*$`, 'm'), `${key}=${value}`);
-    writeFileSync(envPath, updated);
+  const lines = existing.split('\n');
+  const idx = lines.findIndex(l => l.startsWith(`${key}=`));
+  if (idx >= 0) {
+    lines[idx] = `${key}=${sanitized}`;
   } else {
-    writeFileSync(envPath, existing + (existing.endsWith('\n') || existing === '' ? '' : '\n') + `${key}=${value}\n`);
+    lines.push(`${key}=${sanitized}`);
   }
+  writeFileSync(envPath, lines.filter((l, i) => i < lines.length - 1 || l !== '').join('\n') + '\n');
 }
 
 // ============================================================================

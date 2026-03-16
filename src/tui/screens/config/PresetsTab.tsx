@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { Config } from '../../../types/config.js';
+import { t } from '../../../i18n/index.js';
 
 interface PresetDef {
   name: string;
@@ -144,7 +145,7 @@ export function PresetsTab({ config, isActive, onConfigChange }: Props): React.J
     return (
       <Box flexDirection="column" paddingX={1}>
         <Text bold color="yellow">Apply preset &quot;{preset.name}&quot;?</Text>
-        <Text>기존 설정이 대체됩니다.</Text>
+        <Text>{t('config.presets.replaceWarning')}</Text>
         <Text>Press <Text bold>y</Text> to confirm, <Text bold>n</Text> to cancel</Text>
       </Box>
     );

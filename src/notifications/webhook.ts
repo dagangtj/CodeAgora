@@ -49,56 +49,26 @@ function truncate(text: string, max: number): string {
   return text.slice(0, max - 3) + '...';
 }
 
-async function fetchWithTimeout(
-  url: string,
-  init: RequestInit,
-  timeoutMs = 5000
-): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 async function postWebhook(url: string, body: unknown): Promise<void> {
-  const attempt = async (): Promise<Response> =>
-    fetchWithTimeout(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-
-  let res: Response;
-  try {
-    res = await attempt();
-  } catch (err) {
-    // First attempt failed — retry once
+  const maxAttempts = 2;
+  for (let i = 0; i < maxAttempts; i++) {
     try {
-      res = await attempt();
-    } catch (retryErr) {
-      process.stderr.write(
-        `[codeagora] webhook send failed (${url}): ${retryErr instanceof Error ? retryErr.message : String(retryErr)}\n`
-      );
-      return;
-    }
-  }
-
-  if (!res.ok) {
-    // Retry on non-2xx
-    try {
-      const res2 = await attempt();
-      if (!res2.ok) {
-        process.stderr.write(
-          `[codeagora] webhook returned ${res2.status} after retry (${url})\n`
-        );
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(5000),
+      });
+      if (res.ok) return;
+      if (i === maxAttempts - 1) {
+        const redacted = (() => { try { return new URL(url).hostname; } catch { return '[invalid-url]'; } })();
+        process.stderr.write(`[codeagora] webhook returned ${res.status} (${redacted})\n`);
       }
-    } catch (retryErr) {
-      process.stderr.write(
-        `[codeagora] webhook retry failed (${url}): ${retryErr instanceof Error ? retryErr.message : String(retryErr)}\n`
-      );
+    } catch (err) {
+      if (i === maxAttempts - 1) {
+        const redacted = (() => { try { return new URL(url).hostname; } catch { return '[invalid-url]'; } })();
+        process.stderr.write(`[codeagora] webhook failed (${redacted}): ${err instanceof Error ? err.message : String(err)}\n`);
+      }
     }
   }
 }

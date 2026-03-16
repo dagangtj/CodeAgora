@@ -418,6 +418,10 @@ program
         process.exit(1);
       }
       const [date, id] = parts;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date!) || !/^\d+$/.test(id!)) {
+        console.error('Invalid session ID format. Expected: YYYY-MM-DD/NNN');
+        process.exit(1);
+      }
       const sessionDir = path.join(process.cwd(), '.ca', 'sessions', date!, id!);
 
       // Load verdict

@@ -57,6 +57,8 @@
   "statusbar.sessions": "j/k: scroll | Enter: detail | f: filter | q: home",
   "statusbar.config": "Tab: switch tab | j/k: navigate | q: home",
   "statusbar.debate": "j/k: scroll | q: back",
+  "statusbar.review": "q: back",
+  "statusbar.quit": "q: quit",
 
   "config.tabs.reviewers": "Reviewers",
   "config.tabs.supporters": "Supporters",
@@ -65,6 +67,7 @@
   "config.tabs.apiKeys": "API Keys",
   "config.noConfig": "No config found. Apply a preset to get started.",
   "config.saved": "Saved ✓",
+  "config.presets.replaceWarning": "Existing settings will be replaced.",
 
   "severity.critical": "CRITICAL",
   "severity.warning": "WARNING",

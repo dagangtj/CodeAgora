@@ -71,14 +71,12 @@ export function ConfigScreen(): React.JSX.Element {
   const tabIndex = TABS.indexOf(activeTab);
 
   useInput((_input, key) => {
-    if (key.tab) {
-      const next = (tabIndex + 1) % TABS.length;
-      setActiveTab(TABS[next]!);
-    }
-    // Shift+Tab handled via key.shift + key.tab
     if (key.shift && key.tab) {
       const prev = (tabIndex - 1 + TABS.length) % TABS.length;
       setActiveTab(TABS[prev]!);
+    } else if (key.tab) {
+      const next = (tabIndex + 1) % TABS.length;
+      setActiveTab(TABS[next]!);
     }
   });
 
