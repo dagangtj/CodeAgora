@@ -22,6 +22,7 @@ export interface DiffChunk {
 
 export interface ChunkOptions {
   maxTokens?: number; // default 8000
+  cwd?: string;
 }
 
 interface ParsedDiffFile {
@@ -153,11 +154,11 @@ export function splitLargeFile(
 // ============================================================================
 
 /**
- * Get the directory (depth-1) for grouping purposes.
+ * Get the directory (depth-2) for grouping purposes.
  */
 function getFileDir(filePath: string): string {
   const parts = filePath.split('/');
-  return parts.length > 1 ? parts[0] : 'root';
+  return parts.slice(0, Math.min(2, parts.length - 1)).join('/') || 'root';
 }
 
 /**
@@ -238,12 +239,15 @@ export function chunkDiffFiles(
   }
 
   // Convert to DiffChunk[]
-  return mergedChunks.map((chunk, index) => ({
-    index,
-    files: chunk.files,
-    diffContent: chunk.contents.join('\n'),
-    estimatedTokens: chunk.tokens,
-  }));
+  return mergedChunks.map((chunk, index) => {
+    const joined = chunk.contents.join('\n');
+    return {
+      index,
+      files: chunk.files,
+      diffContent: joined,
+      estimatedTokens: estimateTokens(joined),
+    };
+  });
 }
 
 // ============================================================================
@@ -283,7 +287,7 @@ function globToRegex(pattern: string): RegExp {
       regex += '\\.';
       i += 1;
     } else {
-      regex += char;
+      regex += char.replace(/[+()[\]{}^$|\\]/g, '\\$&');
       i += 1;
     }
   }
@@ -344,7 +348,7 @@ export function chunkDiff(diffContent: string, options?: ChunkOptions): DiffChun
   if (parsedFiles.length === 0) return [];
 
   // 2. Apply .reviewignore filter
-  const ignorePatterns = loadReviewIgnorePatterns();
+  const ignorePatterns = loadReviewIgnorePatterns(options?.cwd);
   const filteredFiles = filterIgnoredFiles(parsedFiles, ignorePatterns);
   if (filteredFiles.length === 0) return [];
 
@@ -357,12 +361,13 @@ export function chunkDiff(diffContent: string, options?: ChunkOptions): DiffChun
   // 4. Check if everything fits in a single chunk
   const totalTokens = splitFiles.reduce((sum, f) => sum + estimateTokens(f.content), 0);
   if (totalTokens <= maxTokens) {
+    const joined = splitFiles.map((f) => f.content).join('\n');
     return [
       {
         index: 0,
         files: [...new Set(splitFiles.map((f) => f.filePath))],
-        diffContent: splitFiles.map((f) => f.content).join('\n'),
-        estimatedTokens: totalTokens,
+        diffContent: joined,
+        estimatedTokens: estimateTokens(joined),
       },
     ];
   }

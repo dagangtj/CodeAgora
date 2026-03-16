@@ -4,7 +4,7 @@
  *         chunkDiff, filterIgnoredFiles, mergeReviewOutputsByReviewer
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   estimateTokens,
   parseDiffFiles,
@@ -432,6 +432,45 @@ describe('filterIgnoredFiles', () => {
     ];
     const result = filterIgnoredFiles(files, ['dist/**', '*.log']);
     expect(result).toHaveLength(2);
+  });
+});
+
+// ============================================================================
+// globToRegex metacharacter safety (via filterIgnoredFiles)
+// ============================================================================
+
+describe('filterIgnoredFiles — globToRegex metacharacter safety', () => {
+  it('pattern with parentheses does not throw and matches literally', () => {
+    const files = [
+      { filePath: 'src/(foo)/index.ts', content: '' },
+      { filePath: 'src/bar/index.ts', content: '' },
+    ];
+    expect(() => filterIgnoredFiles(files, ['src/(foo)/index.ts'])).not.toThrow();
+    const result = filterIgnoredFiles(files, ['src/(foo)/index.ts']);
+    expect(result).toHaveLength(1);
+    expect(result[0].filePath).toBe('src/bar/index.ts');
+  });
+
+  it('pattern with brackets does not throw', () => {
+    const files = [
+      { filePath: 'src/[bar]/index.ts', content: '' },
+      { filePath: 'src/baz/index.ts', content: '' },
+    ];
+    expect(() => filterIgnoredFiles(files, ['src/[bar]/index.ts'])).not.toThrow();
+    const result = filterIgnoredFiles(files, ['src/[bar]/index.ts']);
+    expect(result).toHaveLength(1);
+    expect(result[0].filePath).toBe('src/baz/index.ts');
+  });
+
+  it('pattern with + in path does not throw and matches correctly', () => {
+    const files = [
+      { filePath: 'src/c++/main.ts', content: '' },
+      { filePath: 'src/other/main.ts', content: '' },
+    ];
+    expect(() => filterIgnoredFiles(files, ['src/c++/main.ts'])).not.toThrow();
+    const result = filterIgnoredFiles(files, ['src/c++/main.ts']);
+    expect(result).toHaveLength(1);
+    expect(result[0].filePath).toBe('src/other/main.ts');
   });
 });
 
