@@ -172,6 +172,16 @@ export const NotificationsConfigSchema = z.object({
 });
 export type NotificationsConfig = z.infer<typeof NotificationsConfigSchema>;
 
+export const GitHubConfigSchema = z.object({
+  humanReviewers: z.array(z.string()).default([]),
+  humanTeams: z.array(z.string()).default([]),
+  needsHumanLabel: z.string().default('needs-human-review'),
+  postSuggestions: z.boolean().default(false),
+  collapseDiscussions: z.boolean().default(true),
+  sarifOutputPath: z.string().optional(),
+});
+export type GitHubConfig = z.infer<typeof GitHubConfigSchema>;
+
 export const ConfigSchema = z.object({
   reviewers: ReviewersFieldSchema,
   supporters: SupporterPoolConfigSchema,
@@ -180,6 +190,7 @@ export const ConfigSchema = z.object({
   errorHandling: ErrorHandlingSchema,
   modelRouter: ModelRouterConfigSchema.optional(),
   notifications: NotificationsConfigSchema.optional(),
+  github: GitHubConfigSchema.optional(),
 });
 export type Config = z.infer<typeof ConfigSchema>;
 

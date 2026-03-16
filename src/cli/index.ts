@@ -23,6 +23,11 @@ import { sendNotifications, type NotificationPayload } from '../notifications/we
 import ora from 'ora';
 import { ProgressEmitter } from '../pipeline/progress.js';
 import { setLocale, detectLocale } from '../i18n/index.js';
+import { parsePrUrl, parseGitRemote, createGitHubConfig } from '../github/client.js';
+import { fetchPrDiff } from '../github/pr-diff.js';
+import { buildDiffPositionIndex } from '../github/diff-parser.js';
+import { mapToGitHubReview } from '../github/mapper.js';
+import { postReview, setCommitStatus } from '../github/poster.js';
 
 /**
  * Derive the display name from the invoked binary path.
@@ -62,6 +67,8 @@ program
   .option('--no-discussion', 'Skip L2 discussion phase')
   .option('--quiet', 'Suppress progress output', false)
   .option('--notify', 'send notification after review', false)
+  .option('--pr <url-or-number>', 'GitHub PR URL or number (fetches diff from GitHub)')
+  .option('--post-review', 'Post review comments back to the PR (requires --pr)', false)
   .action(async (diffPath: string | undefined, options: {
     dryRun?: boolean;
     output: string;
@@ -74,6 +81,8 @@ program
     discussion: boolean;
     quiet: boolean;
     notify: boolean;
+    pr?: string;
+    postReview: boolean;
   }) => {
     try {
       if (options.quiet && options.verbose) {
@@ -83,10 +92,55 @@ program
       const outputFormat = (['text', 'json', 'md', 'github', 'annotated'].includes(options.output)
         ? options.output : 'text') as OutputFormat;
 
-      // Handle stdin
+      // Handle --pr: fetch diff from GitHub
       let resolvedPath: string;
       let stdinTmpPath: string | undefined;
-      if (diffPath === '-' || (!diffPath && !process.stdin.isTTY)) {
+      let prContext: { owner: string; repo: string; prNumber: number; headSha: string; diff: string } | undefined;
+
+      if (options.pr) {
+        const parsed = parsePrUrl(options.pr);
+        let ghConfig;
+        if (parsed) {
+          ghConfig = createGitHubConfig({ prUrl: options.pr });
+        } else {
+          const prNum = parseInt(options.pr, 10);
+          if (isNaN(prNum)) {
+            console.error('Error: --pr must be a GitHub PR URL or a number');
+            process.exit(1);
+          }
+          const { execFile } = await import('child_process');
+          const { promisify } = await import('util');
+          const execFileAsync = promisify(execFile);
+          const { stdout: remoteUrl } = await execFileAsync('git', ['remote', 'get-url', 'origin']);
+          ghConfig = createGitHubConfig({ remoteUrl: remoteUrl.trim(), prNumber: prNum });
+        }
+
+        if (!options.quiet) console.error(`Fetching PR #${ghConfig.prNumber} diff from GitHub...`);
+        const prInfo = await fetchPrDiff(ghConfig, ghConfig.prNumber);
+
+        const tmpDir = path.join(process.cwd(), '.ca');
+        await fs.mkdir(tmpDir, { recursive: true });
+        stdinTmpPath = path.join(tmpDir, `tmp-pr-${ghConfig.prNumber}-${Date.now()}.patch`);
+        await fs.writeFile(stdinTmpPath, prInfo.diff);
+        resolvedPath = stdinTmpPath;
+
+        // Save PR context for --post-review
+        const { createOctokit } = await import('../github/client.js');
+        const kit = createOctokit(ghConfig);
+        const { data: prData } = await kit.pulls.get({
+          owner: ghConfig.owner,
+          repo: ghConfig.repo,
+          pull_number: ghConfig.prNumber,
+        });
+        prContext = {
+          owner: ghConfig.owner,
+          repo: ghConfig.repo,
+          prNumber: ghConfig.prNumber,
+          headSha: prData.head.sha,
+          diff: prInfo.diff,
+        };
+      } else if (diffPath === '-' || (!diffPath && !process.stdin.isTTY)) {
+        // Handle stdin
         const stdinContent = await readStdin();
         stdinTmpPath = path.join(process.cwd(), '.ca', `tmp-stdin-${Date.now()}.patch`);
         await fs.mkdir(path.dirname(stdinTmpPath), { recursive: true });
@@ -95,7 +149,7 @@ program
       } else if (diffPath) {
         resolvedPath = path.resolve(diffPath);
       } else {
-        console.error('Error: diff-path required (or pipe via stdin)');
+        console.error('Error: diff-path required (or pipe via stdin, or use --pr)');
         process.exit(1);
       }
 
@@ -196,6 +250,33 @@ program
         }
       }
       console.log(formatOutput(result, outputFormat, annotatedOptions));
+
+      // Post review to GitHub if --post-review and --pr were used
+      if (options.postReview && prContext && result.status === 'success' && result.summary) {
+        if (!options.quiet) console.error('Posting review to GitHub...');
+        const ghConfig = { token: process.env['GITHUB_TOKEN'] ?? '', owner: prContext.owner, repo: prContext.repo };
+        const positionIndex = buildDiffPositionIndex(prContext.diff);
+        const review = mapToGitHubReview({
+          summary: result.summary,
+          evidenceDocs: result.summary.topIssues.map((i) => ({
+            issueTitle: i.title,
+            problem: '',
+            evidence: [],
+            severity: i.severity as 'HARSHLY_CRITICAL' | 'CRITICAL' | 'WARNING' | 'SUGGESTION',
+            suggestion: '',
+            filePath: i.filePath,
+            lineRange: i.lineRange,
+          })),
+          discussions: [],
+          positionIndex,
+          headSha: prContext.headSha,
+          sessionId: result.sessionId,
+          sessionDate: result.date,
+        });
+        const postResult = await postReview(ghConfig, prContext.prNumber, review);
+        await setCommitStatus(ghConfig, prContext.headSha, postResult.verdict, postResult.reviewUrl);
+        if (!options.quiet) console.error(`Review posted: ${postResult.reviewUrl}`);
+      }
 
       // Send notifications if requested and pipeline succeeded with a summary
       if (result.status === 'success' && result.summary) {

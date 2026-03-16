@@ -1,0 +1,81 @@
+name: CodeAgora Review
+description: Multi-agent debate-driven code review for pull requests
+
+inputs:
+  config-path:
+    description: Path to .ca/config.json relative to repo root
+    required: false
+    default: .ca/config.json
+
+  github-token:
+    description: GitHub token for posting comments and setting status checks
+    required: true
+
+  fail-on-reject:
+    description: Exit with code 1 when verdict is REJECT (blocks merge via required check)
+    required: false
+    default: 'true'
+
+  max-diff-lines:
+    description: Skip review if diff exceeds this line count (0 = unlimited)
+    required: false
+    default: '5000'
+
+outputs:
+  verdict:
+    description: Final verdict — ACCEPT, REJECT, or NEEDS_HUMAN
+    value: ${{ steps.review.outputs.verdict }}
+
+  review-url:
+    description: URL of the posted GitHub review
+    value: ${{ steps.review.outputs.review-url }}
+
+  session-id:
+    description: CodeAgora session ID for audit trail
+    value: ${{ steps.review.outputs.session-id }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 10
+
+    - name: Install CodeAgora
+      shell: bash
+      run: pnpm install --frozen-lockfile
+      working-directory: ${{ github.action_path }}
+
+    - name: Build CodeAgora
+      shell: bash
+      run: pnpm build
+      working-directory: ${{ github.action_path }}
+
+    - name: Fetch PR diff
+      shell: bash
+      run: |
+        gh pr diff ${{ github.event.pull_request.number }} \
+          --repo ${{ github.repository }} \
+          > /tmp/codeagora-pr.diff
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+
+    - name: Run CodeAgora review
+      id: review
+      shell: bash
+      run: |
+        node ${{ github.action_path }}/dist/github-action.js \
+          --diff /tmp/codeagora-pr.diff \
+          --pr ${{ github.event.pull_request.number }} \
+          --sha ${{ github.event.pull_request.head.sha }} \
+          --repo ${{ github.repository }} \
+          --fail-on-reject ${{ inputs.fail-on-reject }} \
+          --max-diff-lines ${{ inputs.max-diff-lines }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
