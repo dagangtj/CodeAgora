@@ -57,8 +57,8 @@ reviews/
 # Archives
 .archive/
 
-# CodeAgora runtime
+# CodeAgora runtime (local data, not shared)
 .codeagora/
 .ca/sessions/
 .ca/logs/
-.ca/config.json
+.ca/model-quality.json
