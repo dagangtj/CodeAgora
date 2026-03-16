@@ -210,9 +210,9 @@ describe('formatDoctorReport()', () => {
 // ============================================================================
 
 describe('listProviders()', () => {
-  it('returns 13 providers', () => {
+  it('returns 15 providers', () => {
     const providers = listProviders();
-    expect(providers).toHaveLength(13);
+    expect(providers).toHaveLength(15);
   });
 
   it('each entry has name, apiKeyEnvVar, apiKeySet', () => {

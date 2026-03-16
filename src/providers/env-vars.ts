@@ -17,6 +17,8 @@ export const PROVIDER_ENV_VARS: Record<string, string> = {
   deepseek: 'DEEPSEEK_API_KEY',
   qwen: 'QWEN_API_KEY',
   zai: 'ZAI_API_KEY',
+  'github-models': 'GITHUB_TOKEN',
+  'github-copilot': 'GITHUB_COPILOT_TOKEN',
 };
 
 /**

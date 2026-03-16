@@ -124,6 +124,24 @@ const PROVIDER_FACTORIES = {
       }) as unknown as ProviderInstance,
     apiKeyEnvVar: 'ZAI_API_KEY',
   },
+  'github-models': {
+    create: (apiKey: string) =>
+      createOpenAICompatible({
+        name: 'github-models',
+        baseURL: 'https://models.inference.ai.azure.com',
+        apiKey,
+      }) as unknown as ProviderInstance,
+    apiKeyEnvVar: 'GITHUB_TOKEN',
+  },
+  'github-copilot': {
+    create: (apiKey: string) =>
+      createOpenAICompatible({
+        name: 'github-copilot',
+        baseURL: 'https://api.githubcopilot.com',
+        apiKey,
+      }) as unknown as ProviderInstance,
+    apiKeyEnvVar: 'GITHUB_COPILOT_TOKEN',
+  },
 } as const;
 
 type ProviderName = keyof typeof PROVIDER_FACTORIES;
