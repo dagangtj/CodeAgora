@@ -31,6 +31,12 @@ import fs from 'fs/promises';
 
 export interface PipelineInput {
   diffPath: string;
+  providerOverride?: string;
+  modelOverride?: string;
+  timeoutMs?: number;
+  reviewerTimeoutMs?: number;
+  skipDiscussion?: boolean;
+  reviewerSelection?: { count?: number; names?: string[] };
 }
 
 export interface PipelineSummary {
@@ -73,6 +79,19 @@ export async function runPipeline(input: PipelineInput, progress?: ProgressEmitt
     progress?.stageStart('init', 'Loading config...');
     const rawConfig = await loadConfig();
     const config = normalizeConfig(rawConfig);
+
+    // Apply CLI overrides to config
+    if (Array.isArray(config.reviewers)) {
+      for (const r of config.reviewers) {
+        if ('auto' in r) continue; // skip auto reviewers — they have no model/provider
+        if (input.providerOverride) r.provider = input.providerOverride;
+        if (input.modelOverride) r.model = input.modelOverride;
+        if (input.reviewerTimeoutMs) r.timeout = Math.round(input.reviewerTimeoutMs / 1000);
+      }
+    }
+    if (input.timeoutMs) {
+      config.errorHandling.maxRetries = Math.min(config.errorHandling.maxRetries, 1);
+    }
 
     // Create session
     session = await SessionManager.create(input.diffPath);
@@ -171,57 +190,69 @@ export async function runPipeline(input: PipelineInput, progress?: ProgressEmitt
     );
 
     const thresholdResult = applyThreshold(allEvidenceDocs, config.discussion);
-
-    // Deduplicate discussions
-    const { deduplicated, mergedCount } = deduplicateDiscussions(thresholdResult.discussions);
     const logger = createLogger(date, sessionId, 'pipeline');
-    logger.info(`Deduplicated discussions: ${mergedCount} merged`);
 
-    // Extract code snippets for discussions
-    const snippets = extractMultipleSnippets(
-      diffContent,
-      deduplicated.map((d) => ({
-        filePath: d.filePath,
-        lineRange: d.lineRange,
-      })),
-      config.discussion.codeSnippetRange
-    );
+    let moderatorReport: import('../types/core.js').ModeratorReport;
 
-    // Attach snippets to discussions
-    for (const discussion of deduplicated) {
-      const key = `${discussion.filePath}:${discussion.lineRange[0]}-${discussion.lineRange[1]}`;
-      const snippet = snippets.get(key);
-      if (snippet) {
-        discussion.codeSnippet = snippet.code;
-      } else {
-        // Log warning and set fallback message
-        logger.warn(`Failed to extract code snippet for ${key}`);
-        discussion.codeSnippet = `[Code snippet not available - file ${discussion.filePath} may not be in diff]`;
+    if (input.skipDiscussion) {
+      // Skip L2 — treat all issues as unconfirmed
+      logger.info('Discussion skipped (--no-discussion)');
+      moderatorReport = {
+        discussions: [],
+        unconfirmedIssues: thresholdResult.unconfirmed,
+        suggestions: thresholdResult.suggestions,
+        summary: { totalDiscussions: 0, resolved: 0, escalated: 0 },
+      };
+    } else {
+      // Deduplicate discussions
+      const { deduplicated, mergedCount } = deduplicateDiscussions(thresholdResult.discussions);
+      logger.info(`Deduplicated discussions: ${mergedCount} merged`);
+
+      // Extract code snippets for discussions
+      const snippets = extractMultipleSnippets(
+        diffContent,
+        deduplicated.map((d) => ({
+          filePath: d.filePath,
+          lineRange: d.lineRange,
+        })),
+        config.discussion.codeSnippetRange
+      );
+
+      // Attach snippets to discussions
+      for (const discussion of deduplicated) {
+        const key = `${discussion.filePath}:${discussion.lineRange[0]}-${discussion.lineRange[1]}`;
+        const snippet = snippets.get(key);
+        if (snippet) {
+          discussion.codeSnippet = snippet.code;
+        } else {
+          logger.warn(`Failed to extract code snippet for ${key}`);
+          discussion.codeSnippet = `[Code snippet not available - file ${discussion.filePath} may not be in diff]`;
+        }
       }
+
+      // === L2 MODERATOR: Run Discussions ===
+      progress?.stageStart('discuss', 'Moderating discussions...');
+      moderatorReport = await runModerator({
+        config: config.moderator,
+        supporterPoolConfig: config.supporters,
+        discussions: deduplicated,
+        settings: config.discussion,
+        date,
+        sessionId,
+      });
+
+      progress?.stageComplete('discuss', 'Discussions complete');
+
+      // === QUALITY TRACKING: Record L2 discussion results ===
+      qualityTracker.recordDiscussionResults(
+        deduplicated,
+        moderatorReport.discussions
+      );
+
+      // Add unconfirmed and suggestions to report
+      moderatorReport.unconfirmedIssues = thresholdResult.unconfirmed;
+      moderatorReport.suggestions = thresholdResult.suggestions;
     }
-
-    // === L2 MODERATOR: Run Discussions ===
-    progress?.stageStart('discuss', 'Moderating discussions...');
-    const moderatorReport = await runModerator({
-      config: config.moderator,
-      supporterPoolConfig: config.supporters,
-      discussions: deduplicated,
-      settings: config.discussion,
-      date,
-      sessionId,
-    });
-
-    progress?.stageComplete('discuss', 'Discussions complete');
-
-    // === QUALITY TRACKING: Record L2 discussion results ===
-    qualityTracker.recordDiscussionResults(
-      deduplicated,
-      moderatorReport.discussions
-    );
-
-    // Add unconfirmed and suggestions to report
-    moderatorReport.unconfirmedIssues = thresholdResult.unconfirmed;
-    moderatorReport.suggestions = thresholdResult.suggestions;
 
     // Write moderator report
     await writeModeratorReport(date, sessionId, moderatorReport);
