@@ -13,6 +13,7 @@ import { runPipeline } from './pipeline/orchestrator.js';
 import { buildDiffPositionIndex } from './github/diff-parser.js';
 import { mapToGitHubReview } from './github/mapper.js';
 import { postReview, setCommitStatus, handleNeedsHuman } from './github/poster.js';
+import { buildSarifReport, serializeSarif } from './github/sarif.js';
 import { loadConfig } from './config/loader.js';
 
 // ============================================================================
@@ -119,9 +120,11 @@ async function main(): Promise<void> {
   const postResult = await postReview(ghConfig, inputs.pr, review);
   await setCommitStatus(ghConfig, inputs.sha, postResult.verdict, postResult.reviewUrl);
 
+  // Load config for GitHub integration features
+  const config = await loadConfig().catch(() => null);
+
   // Handle NEEDS_HUMAN: request reviewers and add label
   if (postResult.verdict === 'NEEDS_HUMAN') {
-    const config = await loadConfig().catch(() => null);
     const ghIntegration = config?.github;
     await handleNeedsHuman(ghConfig, inputs.pr, {
       humanReviewers: ghIntegration?.humanReviewers,
@@ -129,6 +132,12 @@ async function main(): Promise<void> {
       needsHumanLabel: ghIntegration?.needsHumanLabel,
     });
   }
+
+  // Generate SARIF output
+  const sarifPath = config?.github?.sarifOutputPath ?? '/tmp/codeagora-results.sarif';
+  const sarifReport = buildSarifReport(evidenceDocs, result.sessionId, result.date);
+  await fs.writeFile(sarifPath, serializeSarif(sarifReport));
+  console.log(`SARIF report written to ${sarifPath}`);
 
   console.log('::endgroup::');
 
