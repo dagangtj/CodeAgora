@@ -3,7 +3,7 @@
 **Where LLMs Debate Your Code**
 
 [![Version](https://img.shields.io/npm/v/codeagora)](https://www.npmjs.com/package/codeagora)
-![Tests](https://img.shields.io/badge/tests-1300%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1313%20passing-brightgreen)
 ![Node](https://img.shields.io/badge/node-%3E%3D18-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
@@ -88,13 +88,30 @@ Set at least one provider API key in your environment:
 | Provider | Environment Variable |
 |----------|----------------------|
 | Groq | `GROQ_API_KEY` |
+| OpenAI | `OPENAI_API_KEY` |
+| Anthropic | `ANTHROPIC_API_KEY` |
 | Google | `GOOGLE_API_KEY` |
 | OpenRouter | `OPENROUTER_API_KEY` |
+| DeepSeek | `DEEPSEEK_API_KEY` |
 | Mistral | `MISTRAL_API_KEY` |
-| Cerebras | `CEREBRAS_API_KEY` |
-| Together | `TOGETHER_API_KEY` |
+| Qwen | `QWEN_API_KEY` |
 | xAI | `XAI_API_KEY` |
+| Together | `TOGETHER_API_KEY` |
+| Cerebras | `CEREBRAS_API_KEY` |
 | NVIDIA NIM | `NVIDIA_API_KEY` |
+| ZAI | `ZAI_API_KEY` |
+| GitHub Models | `GITHUB_TOKEN` |
+| GitHub Copilot | `GITHUB_COPILOT_TOKEN` |
+
+API keys are securely stored in `~/.config/codeagora/credentials` (not in your project directory). Set them via the TUI or directly:
+
+```bash
+# Via TUI
+agora tui  # → Config → API Keys
+
+# Or manually
+echo "GROQ_API_KEY=your_key_here" >> ~/.config/codeagora/credentials
+```
 
 Check which keys are detected:
 
@@ -508,7 +525,7 @@ src/
 ├── plugins/       # Plugin system
 ├── types/         # Shared TypeScript type definitions
 ├── utils/         # Shared utilities
-└── tests/         # 80 test files, 1300 tests
+└── tests/         # 81 test files, 1313 tests
 ```
 
 ---
@@ -544,7 +561,7 @@ pnpm cli review path/to/diff.patch
 | LLM SDK | Vercel AI SDK (multi-provider) |
 | Validation | zod |
 | Config | yaml / json |
-| Testing | vitest (1300 tests across 80 files) |
+| Testing | vitest (1313 tests across 81 files) |
 | Build | tsup |
 | Prompts / wizards | @clack/prompts |
 | Spinner / colors | ora, picocolors |
