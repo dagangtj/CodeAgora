@@ -96,6 +96,13 @@ export function EnvSetup({ onDone }: Props): React.JSX.Element {
         cerebras: 'llama-3.3-70b',
         together: 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
         xai: 'grok-2',
+        openai: 'gpt-4o-mini',
+        anthropic: 'claude-sonnet-4-20250514',
+        deepseek: 'deepseek-chat',
+        qwen: 'qwen-turbo',
+        zai: 'zai-default',
+        'github-models': 'gpt-4o-mini',
+        'github-copilot': 'gpt-4o',
       };
       const model = testModels[provider] ?? 'llama-3.3-70b-versatile';
       const languageModel = getModel(provider, model);
