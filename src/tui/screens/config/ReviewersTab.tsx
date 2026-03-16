@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { Config, AgentConfig, ReviewerEntry } from '../../../types/config.js';
 import { PROVIDER_ENV_VARS } from '../../../providers/env-vars.js';
+import { ModelSelector } from '../../components/ModelSelector.js';
+import type { SelectedModel } from '../../components/ModelSelector.js';
 
 const PROVIDERS = Object.keys(PROVIDER_ENV_VARS);
 
@@ -40,6 +42,7 @@ export function ReviewersTab({ config, isActive, onConfigChange }: Props): React
   const [editForm, setEditForm] = useState<EditFormState | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<ConfirmState | null>(null);
   const [message, setMessage] = useState<string>('');
+  const [showModelSelector, setShowModelSelector] = useState<'add' | 'edit' | null>(null);
 
   const reviewers = Array.isArray(config.reviewers) ? config.reviewers : [];
   const staticReviewers = reviewers.filter(isStaticReviewer) as AgentConfig[];
@@ -130,8 +133,13 @@ export function ReviewersTab({ config, isActive, onConfigChange }: Props): React
       } else {
         // model step
         if (key.return) {
-          addReviewer(addForm);
-          setAddForm(null);
+          if (addForm.model.trim()) {
+            addReviewer(addForm);
+            setAddForm(null);
+          } else {
+            // Empty model input -> open model selector
+            setShowModelSelector('add');
+          }
         } else if (key.escape) {
           setAddForm(null);
         } else if (key.backspace || key.delete) {
@@ -176,9 +184,68 @@ export function ReviewersTab({ config, isActive, onConfigChange }: Props): React
       const entry = reviewers[selectedIndex];
       if (entry && isStaticReviewer(entry)) {
         setEditForm({ model: entry.model, timeout: String(entry.timeout ?? 120) });
+        setShowModelSelector('edit');
       }
     }
   });
+
+  // Render model selector for add
+  if (showModelSelector === 'add' && addForm !== null) {
+    return (
+      <ModelSelector
+        source="all"
+        onSelect={(model: SelectedModel) => {
+          setAddForm(f => f ? { ...f, model: model.id.split('/').pop() ?? model.id } : f);
+          setShowModelSelector(null);
+          // Immediately add the reviewer
+          const provider = PROVIDERS[addForm.providerIndex] ?? 'groq';
+          const id = `r${reviewers.length + 1}`;
+          const newReviewer: AgentConfig = {
+            id,
+            model: model.id.split('/').pop() ?? model.id,
+            backend: 'api',
+            provider,
+            enabled: true,
+            timeout: 120,
+          };
+          onConfigChange({ ...config, reviewers: [...reviewers, newReviewer] });
+          setAddForm(null);
+          showMessage('Saved \u2713');
+        }}
+        onCancel={() => {
+          setShowModelSelector(null);
+        }}
+      />
+    );
+  }
+
+  // Render model selector for edit
+  if (showModelSelector === 'edit') {
+    return (
+      <ModelSelector
+        source="all"
+        onSelect={(model: SelectedModel) => {
+          const entry = reviewers[selectedIndex];
+          if (entry && isStaticReviewer(entry)) {
+            const agent = entry as AgentConfig;
+            const updated = reviewers.map((r, i) =>
+              i === selectedIndex
+                ? { ...agent, model: model.id.split('/').pop() ?? model.id }
+                : r
+            );
+            onConfigChange({ ...config, reviewers: updated });
+            showMessage('Saved \u2713');
+          }
+          setShowModelSelector(null);
+          setEditForm(null);
+        }}
+        onCancel={() => {
+          setShowModelSelector(null);
+          setEditForm(null);
+        }}
+      />
+    );
+  }
 
   // Render confirm delete
   if (confirmDelete !== null) {
@@ -208,7 +275,7 @@ export function ReviewersTab({ config, isActive, onConfigChange }: Props): React
     }
     return (
       <Box flexDirection="column" paddingX={1}>
-        <Text bold>Model name (Enter to confirm):</Text>
+        <Text bold>Model name (Enter to confirm, empty Enter to browse):</Text>
         <Text>&gt; {addForm.model}<Text color="cyan">_</Text></Text>
         <Text dimColor>Provider: {PROVIDERS[addForm.providerIndex]}  |  Esc to cancel</Text>
       </Box>

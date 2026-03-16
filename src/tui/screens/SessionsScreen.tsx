@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { listSessions, showSession } from '../../cli/commands/sessions.js';
-import type { SessionEntry, SessionDetail } from '../../cli/commands/sessions.js';
+import { listSessions, showSession, getSessionStats } from '../../cli/commands/sessions.js';
+import type { SessionEntry, SessionDetail, SessionStats } from '../../cli/commands/sessions.js';
 
 type ViewMode = 'list' | 'detail';
+type StatusFilter = 'all' | 'completed' | 'failed' | 'in_progress';
+type SortMode = 'date' | 'issues';
 
 function statusColor(status: string): string {
   switch (status) {
@@ -22,18 +24,37 @@ export function SessionsScreen(): React.JSX.Element {
   const [detail, setDetail] = useState<SessionDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortMode, setSortMode] = useState<SortMode>('date');
+  const [stats, setStats] = useState<SessionStats | null>(null);
 
-  useEffect(() => {
-    listSessions(process.cwd())
-      .then((entries) => {
+  function fetchSessions(status: StatusFilter, sort: SortMode): void {
+    setLoading(true);
+    const opts = {
+      limit: 20,
+      status: status === 'all' ? undefined : status,
+      sort,
+    };
+    Promise.all([
+      listSessions(process.cwd(), opts),
+      getSessionStats(process.cwd()),
+    ])
+      .then(([entries, sessionStats]) => {
         setSessions(entries);
+        setStats(sessionStats);
+        setSelectedIndex(0);
         setLoading(false);
       })
       .catch((e: unknown) => {
         setError(e instanceof Error ? e.message : String(e));
         setLoading(false);
       });
-  }, []);
+  }
+
+  useEffect(() => {
+    fetchSessions(statusFilter, sortMode);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, sortMode]);
 
   useInput((input, key) => {
     if (viewMode === 'list') {
@@ -41,6 +62,15 @@ export function SessionsScreen(): React.JSX.Element {
         setSelectedIndex(i => Math.min(i + 1, sessions.length - 1));
       } else if ((input === 'k' || key.upArrow) && sessions.length > 0) {
         setSelectedIndex(i => Math.max(i - 1, 0));
+      } else if (input === 'f') {
+        // Cycle through status filters
+        const filters: StatusFilter[] = ['all', 'completed', 'failed', 'in_progress'];
+        const currentIdx = filters.indexOf(statusFilter);
+        const next = filters[(currentIdx + 1) % filters.length]!;
+        setStatusFilter(next);
+      } else if (input === 's') {
+        // Toggle sort mode
+        setSortMode(prev => prev === 'date' ? 'issues' : 'date');
       } else if (key.return && sessions.length > 0) {
         const entry = sessions[selectedIndex];
         if (entry) {
@@ -79,6 +109,9 @@ export function SessionsScreen(): React.JSX.Element {
       <Box flexDirection="column" padding={1}>
         <Text bold>Sessions</Text>
         <Text color="red">Error: {error}</Text>
+        <Box marginTop={1}>
+          <Text dimColor>q: back</Text>
+        </Box>
       </Box>
     );
   }
@@ -145,6 +178,21 @@ export function SessionsScreen(): React.JSX.Element {
   return (
     <Box flexDirection="column" padding={1}>
       <Text bold>Sessions</Text>
+
+      {/* Filter bar */}
+      <Box marginTop={1}>
+        <Text dimColor>Filter: </Text>
+        <Text color={statusFilter === 'all' ? 'cyan' : undefined} bold={statusFilter === 'all'}>all</Text>
+        <Text dimColor> | </Text>
+        <Text color={statusFilter === 'completed' ? 'green' : undefined} bold={statusFilter === 'completed'}>completed</Text>
+        <Text dimColor> | </Text>
+        <Text color={statusFilter === 'failed' ? 'red' : undefined} bold={statusFilter === 'failed'}>failed</Text>
+        <Text dimColor> | </Text>
+        <Text color={statusFilter === 'in_progress' ? 'yellow' : undefined} bold={statusFilter === 'in_progress'}>in_progress</Text>
+        <Text dimColor>    Sort: </Text>
+        <Text color="cyan" bold>{sortMode}</Text>
+      </Box>
+
       {sessions.length === 0 ? (
         <Box marginTop={1}>
           <Text dimColor>No sessions found. Run &apos;agora review&apos; to create one.</Text>
@@ -170,9 +218,19 @@ export function SessionsScreen(): React.JSX.Element {
           })}
         </Box>
       )}
+
+      {/* Stats footer */}
+      {stats && stats.totalSessions > 0 && (
+        <Box marginTop={1}>
+          <Text dimColor>
+            Total: {stats.totalSessions} | Success rate: {stats.successRate.toFixed(1)}%
+          </Text>
+        </Box>
+      )}
+
       <Box marginTop={1}>
         <Text dimColor>
-          {sessions.length > 0 ? 'Enter: details | ' : ''}j/k: scroll | q: back
+          {sessions.length > 0 ? 'Enter: details | ' : ''}f: filter | s: sort | j/k: scroll | q: back
         </Text>
       </Box>
     </Box>

@@ -4,6 +4,7 @@ import type { PipelineResult } from '../../pipeline/orchestrator.js';
 
 interface Props {
   result: PipelineResult;
+  onHome?: () => void;
 }
 
 type ViewMode = 'list' | 'detail';
@@ -27,7 +28,7 @@ function decisionBgColor(decision: string): { color: string; bold: boolean } {
   }
 }
 
-export function ResultsScreen({ result }: Props): React.JSX.Element {
+export function ResultsScreen({ result, onHome }: Props): React.JSX.Element {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
 
@@ -44,7 +45,9 @@ export function ResultsScreen({ result }: Props): React.JSX.Element {
         setViewMode('detail');
       }
     } else {
-      if (key.escape || input === 'q') {
+      if (key.escape) {
+        setViewMode('list');
+      } else if (input === 'q') {
         setViewMode('list');
       }
     }

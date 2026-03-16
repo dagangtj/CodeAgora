@@ -5,7 +5,6 @@ import { Header } from './components/Header.js';
 import { StatusBar } from './components/StatusBar.js';
 import { HomeScreen } from './screens/HomeScreen.js';
 import { ReviewSetupScreen } from './screens/ReviewSetupScreen.js';
-import { ReviewScreen } from './screens/ReviewScreen.js';
 import { PipelineScreen } from './screens/PipelineScreen.js';
 import { SessionsScreen } from './screens/SessionsScreen.js';
 import { ConfigScreen } from './screens/ConfigScreen.js';
@@ -23,7 +22,10 @@ export function App(): React.JSX.Element {
 
   useInput((input) => {
     if (input === 'q') {
-      if (canGoBack) {
+      if (screen === 'results') {
+        // From results, go home
+        navigate('home');
+      } else if (canGoBack) {
         goBack();
       } else {
         exit();
@@ -53,7 +55,16 @@ export function App(): React.JSX.Element {
           />
         );
       case 'review':
-        return <ReviewScreen diffPath={reviewParams?.diffPath} />;
+        // ReviewScreen is deprecated; redirect to pipeline if we have params
+        return reviewParams ? (
+          <PipelineScreen
+            diffPath={reviewParams.diffPath}
+            onComplete={handlePipelineComplete}
+            onError={() => navigate('home')}
+          />
+        ) : (
+          <HomeScreen onNavigate={navigate} onQuit={exit} />
+        );
       case 'pipeline':
         return (
           <PipelineScreen
@@ -64,7 +75,7 @@ export function App(): React.JSX.Element {
         );
       case 'results':
         return pipelineResult
-          ? <ResultsScreen result={pipelineResult} />
+          ? <ResultsScreen result={pipelineResult} onHome={() => navigate('home')} />
           : <HomeScreen onNavigate={navigate} onQuit={exit} />;
       case 'sessions':
         return <SessionsScreen />;

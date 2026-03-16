@@ -22,6 +22,7 @@ interface Props {
 export function PipelineScreen({ diffPath, onComplete, onError }: Props): React.JSX.Element {
   const [progress] = useState(() => new ProgressEmitter());
   const [statusMessage, setStatusMessage] = useState('Starting pipeline...');
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,6 +33,7 @@ export function PipelineScreen({ diffPath, onComplete, onError }: Props): React.
       if (cancelled) return;
       if (result.status === 'error') {
         setStatusMessage(`Error: ${result.error ?? 'Unknown error'}`);
+        setHasError(true);
         onError(result.error ?? 'Unknown error');
       } else {
         setStatusMessage('Pipeline complete');
@@ -43,6 +45,7 @@ export function PipelineScreen({ diffPath, onComplete, onError }: Props): React.
       if (cancelled) return;
       const message = err instanceof Error ? err.message : String(err);
       setStatusMessage(`Error: ${message}`);
+      setHasError(true);
       onError(message);
     });
 
@@ -56,8 +59,13 @@ export function PipelineScreen({ diffPath, onComplete, onError }: Props): React.
     <Box flexDirection="column">
       <PipelineProgress progress={progress} />
       <Box paddingX={1}>
-        <Text color="gray">{statusMessage}</Text>
+        <Text color={hasError ? 'red' : 'gray'}>{statusMessage}</Text>
       </Box>
+      {hasError && (
+        <Box paddingX={1} marginTop={1}>
+          <Text dimColor>q: back to home</Text>
+        </Box>
+      )}
     </Box>
   );
 }

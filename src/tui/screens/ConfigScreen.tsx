@@ -9,14 +9,16 @@ import { ReviewersTab } from './config/ReviewersTab.js';
 import { SupportersTab } from './config/SupportersTab.js';
 import { ModeratorTab } from './config/ModeratorTab.js';
 import { PresetsTab } from './config/PresetsTab.js';
+import { EnvSetup } from './config/EnvSetup.js';
 
-type TabName = 'reviewers' | 'supporters' | 'moderator' | 'presets';
-const TABS: TabName[] = ['reviewers', 'supporters', 'moderator', 'presets'];
+type TabName = 'reviewers' | 'supporters' | 'moderator' | 'presets' | 'env';
+const TABS: TabName[] = ['reviewers', 'supporters', 'moderator', 'presets', 'env'];
 const TAB_LABELS: Record<TabName, string> = {
   reviewers: 'Reviewers',
   supporters: 'Supporters',
   moderator: 'Moderator',
   presets: 'Presets',
+  env: 'API Keys',
 };
 
 interface ConfigState {
@@ -90,8 +92,11 @@ export function ConfigScreen(): React.JSX.Element {
     return (
       <Box flexDirection="column" padding={1}>
         <Text bold>Configuration</Text>
-        <Text color="yellow">No config found. Run <Text bold>agora init</Text> first.</Text>
+        <Text color="yellow">No config found. Run <Text bold>agora init</Text> or apply a Preset from the Config tab.</Text>
         {state.error ? <Text dimColor>{state.error}</Text> : null}
+        <Box marginTop={1}>
+          <Text dimColor>q: back</Text>
+        </Box>
       </Box>
     );
   }
@@ -147,6 +152,9 @@ export function ConfigScreen(): React.JSX.Element {
           isActive={activeTab === 'presets'}
           onConfigChange={handleConfigChange}
         />
+      )}
+      {activeTab === 'env' && (
+        <EnvSetup onDone={() => setActiveTab('reviewers')} />
       )}
 
       {saveError ? (
