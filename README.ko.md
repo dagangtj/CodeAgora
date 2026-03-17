@@ -1,11 +1,16 @@
-# CodeAgora
+<p align="center">
+  <img src="assets/logo.svg" width="120" alt="CodeAgora Logo">
+</p>
 
-**LLM들이 당신의 코드를 토론합니다**
+<h1 align="center">CodeAgora</h1>
+<p align="center"><strong>LLM들이 당신의 코드를 토론합니다</strong></p>
 
-[![Version](https://img.shields.io/npm/v/codeagora)](https://www.npmjs.com/package/codeagora)
-![Tests](https://img.shields.io/badge/tests-1313%20passing-brightgreen)
-![Node](https://img.shields.io/badge/node-%3E%3D18-green)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
+<p align="center">
+  <a href="https://www.npmjs.com/package/codeagora"><img src="https://img.shields.io/npm/v/codeagora?color=%2305A6B9" alt="Version"></a>
+  <img src="https://img.shields.io/badge/tests-1313%20passing-%23191A51" alt="Tests">
+  <img src="https://img.shields.io/badge/node-%3E%3D20-%2305A6B9" alt="Node">
+  <img src="https://img.shields.io/badge/license-MIT-%23191A51" alt="License">
+</p>
 
 CodeAgora는 여러 LLM을 병렬로 실행하여 코드를 독립적으로 리뷰하고, 의견 충돌이 생기면 구조화된 토론을 거쳐 Head 에이전트가 최종 판결을 내리는 코드 리뷰 파이프라인입니다. 서로 다른 모델은 서로 다른 사각지대를 가지고 있어, 함께 실행하면 더 많은 이슈를 잡아내고 합의를 통해 노이즈를 걸러냅니다.
 
