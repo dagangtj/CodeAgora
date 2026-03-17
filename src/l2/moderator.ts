@@ -122,16 +122,17 @@ export interface ModeratorInput {
   settings: DiscussionSettings;
   date: string;
   sessionId: string;
+  language?: 'en' | 'ko';
 }
 
 /**
  * Run all discussions and generate final report
  */
 export async function runModerator(input: ModeratorInput): Promise<ModeratorReport> {
-  const { config, supporterPoolConfig, discussions, settings, date, sessionId } = input;
+  const { config, supporterPoolConfig, discussions, settings, date, sessionId, language } = input;
 
   const results = await Promise.allSettled(
-    discussions.map((d) => runDiscussion(d, config, supporterPoolConfig, settings, date, sessionId))
+    discussions.map((d) => runDiscussion(d, config, supporterPoolConfig, settings, date, sessionId, language))
   );
 
   const verdicts: DiscussionVerdict[] = results.map((result, i) => {
@@ -173,7 +174,8 @@ async function runDiscussion(
   supporterPoolConfig: SupporterPoolConfig,
   settings: DiscussionSettings,
   date: string,
-  sessionId: string
+  sessionId: string,
+  language?: 'en' | 'ko'
 ): Promise<DiscussionVerdict> {
   const rounds: DiscussionRound[] = [];
 
@@ -211,7 +213,8 @@ async function runDiscussion(
       discussion,
       roundNum,
       moderatorConfig,
-      selectedSupporters
+      selectedSupporters,
+      language
     );
 
     rounds.push(round);
@@ -301,10 +304,11 @@ async function runRound(
   discussion: Discussion,
   roundNum: number,
   moderatorConfig: ModeratorConfig,
-  selectedSupporters: SelectedSupporter[]
+  selectedSupporters: SelectedSupporter[],
+  language?: 'en' | 'ko'
 ): Promise<DiscussionRound> {
   // Moderator prompts the discussion
-  const moderatorPrompt = buildModeratorPrompt(discussion, roundNum);
+  const moderatorPrompt = buildModeratorPrompt(discussion, roundNum, language);
 
   // Supporters respond in parallel with graceful degradation
   const supporterResults = await Promise.allSettled(
@@ -458,7 +462,35 @@ ${rounds.map((r, i) => `Round ${i + 1}:\n${r.supporterResponses.map(s => `- ${s.
 // Helpers
 // ============================================================================
 
-function buildModeratorPrompt(discussion: Discussion, roundNum: number): string {
+function buildModeratorPrompt(discussion: Discussion, roundNum: number, language?: 'en' | 'ko'): string {
+  const isKo = language === 'ko';
+
+  if (isKo) {
+    const snippetSection = discussion.codeSnippet && discussion.codeSnippet.trim()
+      ? `코드 스니펫:
+\`\`\`
+${discussion.codeSnippet}
+\`\`\``
+      : `코드 스니펫: (사용 불가 - 파일이 diff에 없을 수 있음)`;
+
+    return `라운드 ${roundNum}
+
+이슈: ${discussion.issueTitle}
+파일: ${discussion.filePath}:${discussion.lineRange[0]}-${discussion.lineRange[1]}
+주장된 심각도: ${discussion.severity}
+
+근거 문서: ${discussion.evidenceDocs.length}명의 리뷰어
+
+${snippetSection}
+
+이 이슈에 대한 판단을 내려주세요:
+- 동의: 근거가 타당합니다
+- 반대: 근거가 부족합니다
+- 중립: 추가 정보가 필요합니다
+
+판단과 이유를 제시해 주세요.`;
+  }
+
   const snippetSection = discussion.codeSnippet && discussion.codeSnippet.trim()
     ? `Code snippet:
 \`\`\`

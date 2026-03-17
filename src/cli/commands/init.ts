@@ -8,8 +8,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as p from '@clack/prompts';
 import { generateMinimalTemplate } from '../../config/templates.js';
+import { getModePreset } from '../../config/mode-presets.js';
 import { PROVIDER_ENV_VARS } from '../../providers/env-vars.js';
 import { stringify as yamlStringify } from 'yaml';
+import type { ReviewMode, Language } from '../../types/config.js';
 
 const _dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -35,6 +37,8 @@ export interface CustomConfigParams {
   model: string;
   reviewerCount: number;
   discussion: boolean;
+  mode?: ReviewMode;
+  language?: Language;
 }
 
 interface AgentEntry { id: string; label?: string; model: string; backend: string; provider: string; enabled: boolean; timeout: number }
@@ -152,13 +156,14 @@ async function writePersonas(
  * Build a config object from user selections (wizard or programmatic).
  */
 export function buildCustomConfig(params: CustomConfigParams): GeneratedConfig {
-  const { provider, model, reviewerCount, discussion } = params;
+  const { provider, model, reviewerCount, discussion, mode = 'pragmatic', language = 'en' } = params;
 
   if (reviewerCount < 1 || reviewerCount > 10) {
     throw new Error(`reviewerCount must be between 1 and 10, got ${reviewerCount}`);
   }
 
   const agentBase = { model, backend: 'api', provider, enabled: true, timeout: 120 };
+  const preset = getModePreset(mode);
 
   const reviewers = Array.from({ length: reviewerCount }, (_, i) => ({
     id: `r${i + 1}`,
@@ -167,6 +172,8 @@ export function buildCustomConfig(params: CustomConfigParams): GeneratedConfig {
   }));
 
   return {
+    mode,
+    language,
     reviewers,
     supporters: {
       pool: [
@@ -178,7 +185,7 @@ export function buildCustomConfig(params: CustomConfigParams): GeneratedConfig {
         id: 'da',
         ...agentBase,
       },
-      personaPool: ['.ca/personas/strict.md', '.ca/personas/pragmatic.md'],
+      personaPool: preset.personaPool,
       personaAssignment: 'random',
     },
     moderator: {
@@ -186,14 +193,15 @@ export function buildCustomConfig(params: CustomConfigParams): GeneratedConfig {
       backend: 'api',
       provider,
     },
+    head: {
+      backend: 'api',
+      model,
+      provider,
+      enabled: true,
+    },
     discussion: {
-      maxRounds: discussion ? 4 : 0,
-      registrationThreshold: {
-        HARSHLY_CRITICAL: 1,
-        CRITICAL: 1,
-        WARNING: 2,
-        SUGGESTION: null,
-      },
+      maxRounds: discussion ? preset.maxRounds : 0,
+      registrationThreshold: preset.registrationThreshold,
       codeSnippetRange: 10,
     },
     errorHandling: {
@@ -369,8 +377,38 @@ export async function runInitInteractive(options: InitOptions): Promise<InitResu
   }
   const discussion = discussionSelection as boolean;
 
+  // Step 6: Review mode
+  const modeSelection = await p.select({
+    message: 'Review mode?',
+    options: [
+      { value: 'pragmatic', label: 'Pragmatic (balanced, fewer false positives)' },
+      { value: 'strict', label: 'Strict (security-focused, lower thresholds)' },
+    ],
+    initialValue: 'pragmatic',
+  });
+  if (p.isCancel(modeSelection)) {
+    p.cancel('Setup cancelled.');
+    throw new UserCancelledError();
+  }
+  const mode = modeSelection as ReviewMode;
+
+  // Step 7: Language
+  const languageSelection = await p.select({
+    message: 'Review language?',
+    options: [
+      { value: 'en', label: 'English' },
+      { value: 'ko', label: '한국어' },
+    ],
+    initialValue: 'en',
+  });
+  if (p.isCancel(languageSelection)) {
+    p.cancel('Setup cancelled.');
+    throw new UserCancelledError();
+  }
+  const language = languageSelection as Language;
+
   // Build config from selections
-  const configData = buildCustomConfig({ provider, model, reviewerCount, discussion });
+  const configData = buildCustomConfig({ provider, model, reviewerCount, discussion, mode, language });
 
   // Ensure .ca/ directory exists
   const caDir = path.join(baseDir, '.ca');

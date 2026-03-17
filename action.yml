@@ -42,20 +42,9 @@ runs:
       with:
         node-version: '20'
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 10
-
     - name: Install CodeAgora
       shell: bash
-      run: pnpm install --frozen-lockfile
-      working-directory: ${{ github.action_path }}
-
-    - name: Build CodeAgora
-      shell: bash
-      run: pnpm build
-      working-directory: ${{ github.action_path }}
+      run: npm install -g codeagora
 
     - name: Fetch PR diff
       shell: bash
@@ -72,7 +61,7 @@ runs:
       id: review
       shell: bash
       run: |
-        node "$ACTION_PATH/dist/github-action.js" \
+        node "$(dirname $(which codeagora))/../dist/github-action.js" \
           --diff /tmp/codeagora-pr.diff \
           --pr "$PR_NUMBER" \
           --sha "$HEAD_SHA" \
@@ -81,7 +70,6 @@ runs:
           --max-diff-lines "$MAX_DIFF_LINES"
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        ACTION_PATH: ${{ github.action_path }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         REPO: ${{ github.repository }}

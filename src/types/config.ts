@@ -195,7 +195,15 @@ export const HeadConfigSchema = z.object({
 });
 export type HeadConfig = z.infer<typeof HeadConfigSchema>;
 
+export const ReviewModeSchema = z.enum(['strict', 'pragmatic']).default('pragmatic');
+export type ReviewMode = z.infer<typeof ReviewModeSchema>;
+
+export const LanguageSchema = z.enum(['en', 'ko']).default('en');
+export type Language = z.infer<typeof LanguageSchema>;
+
 export const ConfigSchema = z.object({
+  mode: ReviewModeSchema.optional(),
+  language: LanguageSchema.optional(),
   reviewers: ReviewersFieldSchema,
   supporters: SupporterPoolConfigSchema,
   moderator: ModeratorConfigSchema,

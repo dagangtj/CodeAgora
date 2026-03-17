@@ -20,23 +20,25 @@ import type { HeadConfig } from '../types/config.js';
 export async function makeHeadVerdict(
   report: ModeratorReport,
   headConfig?: HeadConfig,
+  mode?: 'strict' | 'pragmatic',
+  language?: 'en' | 'ko',
 ): Promise<HeadVerdict> {
   // Try LLM-based verdict if configured
   if (headConfig?.enabled !== false && headConfig?.model) {
     try {
-      return await llmVerdict(report, headConfig);
+      return await llmVerdict(report, headConfig, language);
     } catch {
       // Fallback to rule-based on any LLM failure
     }
   }
 
-  return ruleBasedVerdict(report);
+  return ruleBasedVerdict(report, mode);
 }
 
-async function llmVerdict(report: ModeratorReport, config: HeadConfig): Promise<HeadVerdict> {
+async function llmVerdict(report: ModeratorReport, config: HeadConfig, language?: 'en' | 'ko'): Promise<HeadVerdict> {
   const { executeBackend } = await import('../l1/backend.js');
 
-  const prompt = buildHeadPrompt(report);
+  const prompt = buildHeadPrompt(report, language);
   const response = await executeBackend({
     backend: config.backend,
     model: config.model,
@@ -48,19 +50,88 @@ async function llmVerdict(report: ModeratorReport, config: HeadConfig): Promise<
   return parseHeadResponse(response, report);
 }
 
-function buildHeadPrompt(report: ModeratorReport): string {
+function buildHeadPrompt(report: ModeratorReport, language?: 'en' | 'ko'): string {
+  const isKo = language === 'ko';
+
   const discussionSummary = report.discussions.map((d) => {
-    const consensus = d.consensusReached ? 'consensus reached' : 'no consensus';
-    return `- [${d.finalSeverity}] ${d.discussionId} (${d.filePath}:${d.lineRange[0]}) — ${consensus}, ${d.rounds} round(s): ${d.reasoning}`;
+    const consensus = d.consensusReached
+      ? (isKo ? '합의 도달' : 'consensus reached')
+      : (isKo ? '합의 미달' : 'no consensus');
+    return `- [${d.finalSeverity}] ${d.discussionId} (${d.filePath}:${d.lineRange[0]}) — ${consensus}, ${d.rounds} ${isKo ? '라운드' : 'round(s)'}: ${d.reasoning}`;
   }).join('\n');
 
   const unconfirmedSummary = report.unconfirmedIssues.length > 0
-    ? `\nUnconfirmed issues (single reviewer): ${report.unconfirmedIssues.length}`
+    ? `\n${isKo ? '미확인 이슈 (단일 리뷰어)' : 'Unconfirmed issues (single reviewer)'}: ${report.unconfirmedIssues.length}`
     : '';
 
   const suggestionsSummary = report.suggestions.length > 0
-    ? `\nSuggestions: ${report.suggestions.length}`
+    ? `\n${isKo ? '제안' : 'Suggestions'}: ${report.suggestions.length}`
     : '';
+
+  // Quantitative counts per severity
+  const countBySeverity = (sev: string) =>
+    report.discussions.filter((d) => d.finalSeverity === sev).length;
+  const harshlyCount = countBySeverity('HARSHLY_CRITICAL');
+  const criticalCount = countBySeverity('CRITICAL');
+  const warningCount = countBySeverity('WARNING');
+  const suggestionCount = countBySeverity('SUGGESTION');
+  const unresolvedCount = report.discussions.filter((d) => !d.consensusReached).length;
+
+  const quantSection = isKo
+    ? `## 정량 요약
+- HARSHLY_CRITICAL: ${harshlyCount}건
+- CRITICAL: ${criticalCount}건
+- WARNING: ${warningCount}건
+- SUGGESTION: ${suggestionCount}건
+- 미해결 토론: ${unresolvedCount}건
+
+## 판단 지침
+- CRITICAL 이상 이슈가 존재하면: REJECT 강력 권고
+- 미해결 토론이 남아있으면: NEEDS_HUMAN 고려`
+    : `## Quantitative Summary
+- HARSHLY_CRITICAL: ${harshlyCount} issues
+- CRITICAL: ${criticalCount} issues
+- WARNING: ${warningCount} issues
+- SUGGESTION: ${suggestionCount} issues
+- Unresolved discussions: ${unresolvedCount}
+
+## Guidance
+- If CRITICAL+ issues exist: strongly consider REJECT
+- If unresolved discussions remain: consider NEEDS_HUMAN`;
+
+  if (isKo) {
+    return `당신은 멀티 에이전트 코드 리뷰 시스템의 최종 판관입니다. 여러 AI 리뷰어가 독립적으로 코드 변경을 검토한 후 토론을 진행했습니다. 최종 판결을 내려주세요.
+
+## 토론 결과
+
+전체 토론: ${report.summary.totalDiscussions}
+해결됨 (합의): ${report.summary.resolved}
+에스컬레이션 (미합의): ${report.summary.escalated}
+${unconfirmedSummary}
+${suggestionsSummary}
+
+${quantSection}
+
+### 토론 상세
+${discussionSummary || '(토론 없음)'}
+
+## 작업
+
+각 토론의 추론 품질을 평가하세요. 심각도 수치만 보지 마세요:
+1. CRITICAL/HARSHLY_CRITICAL 결과가 충분한 근거를 갖추고 있나요, 아니면 추측성인가요?
+2. 토론에서 거짓 긍정(false positive)이 밝혀졌나요?
+3. 에스컬레이션된 이슈가 진정으로 모호한가요, 아니면 단순히 토론이 부족한 건가요?
+4. 전반적으로 코드 변경이 병합하기 안전한가요?
+
+## 응답 형식
+
+정확히 다음 형식으로 응답하세요:
+
+DECISION: ACCEPT | REJECT | NEEDS_HUMAN
+REASONING: <근거 품질을 바탕으로 한 결정 설명 (한 단락)>
+QUESTIONS: <인간 리뷰어를 위한 질문 목록 (쉼표 구분), 없으면 "none">
+`;
+  }
 
   return `You are the Head Judge in a multi-agent code review system. Multiple AI reviewers independently reviewed a code change, then debated their findings. You must now deliver the final verdict.
 
@@ -71,6 +142,8 @@ Resolved (consensus): ${report.summary.resolved}
 Escalated (no consensus): ${report.summary.escalated}
 ${unconfirmedSummary}
 ${suggestionsSummary}
+
+${quantSection}
 
 ### Discussion Details
 ${discussionSummary || '(no discussions)'}
@@ -125,12 +198,26 @@ function parseHeadResponse(response: string, report: ModeratorReport): HeadVerdi
 // Rule-Based Verdict (Fallback)
 // ============================================================================
 
-function ruleBasedVerdict(report: ModeratorReport): HeadVerdict {
+function ruleBasedVerdict(report: ModeratorReport, mode?: 'strict' | 'pragmatic'): HeadVerdict {
   const criticalIssues = report.discussions.filter(
     (d) => d.finalSeverity === 'CRITICAL' || d.finalSeverity === 'HARSHLY_CRITICAL'
   );
 
   const escalatedIssues = report.discussions.filter((d) => !d.consensusReached);
+
+  // Strict mode: 3+ WARNING issues trigger NEEDS_HUMAN
+  if (mode === 'strict') {
+    const warningIssues = report.discussions.filter((d) => d.finalSeverity === 'WARNING');
+    if (warningIssues.length >= 3) {
+      return {
+        decision: 'NEEDS_HUMAN',
+        reasoning: `Strict mode: ${warningIssues.length} warning issue(s) require human review.`,
+        questionsForHuman: escalatedIssues.length > 0
+          ? [`${escalatedIssues.length} issue(s) need human judgment`]
+          : undefined,
+      };
+    }
+  }
 
   if (criticalIssues.length > 0) {
     return {

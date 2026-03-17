@@ -57,20 +57,27 @@ export function mapToInlineCommentBody(
 
   if (doc.suggestion) {
     lines.push('');
-    lines.push(`**Suggestion:** ${doc.suggestion}`);
+    const codeBlockMatch = /```[\w]*\n([\s\S]*?)```/.exec(doc.suggestion);
+    if (codeBlockMatch) {
+      const extractedCode = codeBlockMatch[1];
+      lines.push('```suggestion');
+      lines.push(extractedCode!.replace(/\n$/, ''));
+      lines.push('```');
+    } else {
+      lines.push(`**Suggestion:** ${doc.suggestion}`);
+    }
   }
 
   if (discussion) {
     lines.push('');
     lines.push('<details>');
-    const consensusText = discussion.consensusReached
-      ? 'consensus reached'
-      : 'forced decision';
+    const consensusIcon = discussion.consensusReached ? '\u2705' : '\u26A0\uFE0F';
+    const consensusText = discussion.consensusReached ? 'consensus' : 'forced decision';
     lines.push(
-      `<summary>Discussion ${discussion.discussionId} \u2014 ${discussion.rounds} round(s), ${consensusText}</summary>`,
+      `<summary>${consensusIcon} Discussion ${discussion.discussionId} \u2014 ${discussion.rounds} round(s), ${consensusText}</summary>`,
     );
     lines.push('');
-    lines.push(discussion.reasoning);
+    lines.push(`> ${discussion.reasoning}`);
     lines.push('');
     lines.push('</details>');
   }
@@ -234,10 +241,12 @@ export function buildSummaryBody(params: {
     lines.push('<details>');
     lines.push(`<summary>Agent consensus log (${discussions.length} discussion(s))</summary>`);
     lines.push('');
+    lines.push('| Discussion | Rounds | Consensus | Final Severity |');
+    lines.push('|-----------|--------|-----------|----------------|');
     for (const d of discussions) {
-      const consensusText = d.consensusReached ? 'consensus reached' : 'forced decision';
+      const consensusCell = d.consensusReached ? '\u2705 Yes' : '\u26A0\uFE0F Forced';
       lines.push(
-        `- **${d.discussionId}** \u2014 ${d.rounds} round(s), ${consensusText}: ${d.finalSeverity}`,
+        `| ${d.discussionId} | ${d.rounds} | ${consensusCell} | ${d.finalSeverity} |`,
       );
     }
     lines.push('');

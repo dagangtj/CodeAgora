@@ -11,6 +11,8 @@ import { stringify as yamlStringify } from 'yaml';
 
 /** Full config object covering every supported option. */
 const FULL_TEMPLATE_DATA = {
+  mode: 'pragmatic',
+  language: 'en',
   reviewers: [
     {
       id: 'r1',
@@ -87,6 +89,12 @@ const FULL_TEMPLATE_DATA = {
     },
     codeSnippetRange: 10,
   },
+  head: {
+    backend: 'api',
+    model: 'llama-3.3-70b-versatile',
+    provider: 'groq',
+    enabled: true,
+  },
   errorHandling: {
     maxRetries: 2,
     forfeitThreshold: 0.7,
@@ -95,6 +103,8 @@ const FULL_TEMPLATE_DATA = {
 
 /** Minimal config — one reviewer, one supporter, sensible defaults. */
 const MINIMAL_TEMPLATE_DATA = {
+  mode: 'pragmatic',
+  language: 'en',
   reviewers: [
     {
       id: 'r1',
@@ -144,6 +154,12 @@ const MINIMAL_TEMPLATE_DATA = {
     },
     codeSnippetRange: 10,
   },
+  head: {
+    backend: 'api',
+    model: 'llama-3.3-70b-versatile',
+    provider: 'groq',
+    enabled: true,
+  },
   errorHandling: {
     maxRetries: 2,
     forfeitThreshold: 0.7,
@@ -152,6 +168,8 @@ const MINIMAL_TEMPLATE_DATA = {
 
 /** Declarative reviewers config — L0 picks models automatically. */
 const DECLARATIVE_TEMPLATE_DATA = {
+  mode: 'pragmatic',
+  language: 'en',
   reviewers: {
     count: 5,
     constraints: {
@@ -199,6 +217,12 @@ const DECLARATIVE_TEMPLATE_DATA = {
       SUGGESTION: null,
     },
     codeSnippetRange: 10,
+  },
+  head: {
+    backend: 'api',
+    model: 'llama-3.3-70b-versatile',
+    provider: 'groq',
+    enabled: true,
   },
   errorHandling: {
     maxRetries: 2,

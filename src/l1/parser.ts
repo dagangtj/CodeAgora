@@ -32,8 +32,16 @@ export function parseEvidenceResponse(
         .filter((line) => line.match(/^\d+\./))
         .map((line) => line.replace(/^\d+\.\s*/, ''));
 
-      const severity = parseSeverity(severityText.trim());
+      let severity = parseSeverity(severityText.trim());
       const fileInfo = extractFileInfo(problem, diffFilePaths);
+
+      // Escalate severity to CRITICAL minimum when file path is unknown
+      if (fileInfo.filePath === 'unknown') {
+        if (severity === 'SUGGESTION' || severity === 'WARNING') {
+          severity = 'CRITICAL';
+        }
+        // CRITICAL and HARSHLY_CRITICAL are preserved as-is
+      }
 
       documents.push({
         issueTitle: title.trim(),

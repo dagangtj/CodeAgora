@@ -58,7 +58,7 @@ describe('mapToInlineCommentBody', () => {
     const body = mapToInlineCommentBody(makeDoc(), makeDiscussion());
     expect(body).toContain('<details>');
     expect(body).toContain('d001');
-    expect(body).toContain('consensus reached');
+    expect(body).toContain('consensus');
   });
 
   it('shows forced decision for non-consensus', () => {
