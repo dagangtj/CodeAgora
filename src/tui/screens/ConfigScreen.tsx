@@ -11,7 +11,7 @@ import { TabBar } from '../components/TabBar.js';
 import { Toast } from '../components/Toast.js';
 import { HelpOverlay } from '../components/HelpOverlay.js';
 import type { KeyBinding } from '../components/HelpOverlay.js';
-import { colors, icons, getTerminalSize } from '../theme.js';
+import { colors, icons } from '../theme.js';
 import { getActiveProviderCount } from '../utils/provider-status.js';
 import { ReviewersTab } from './config/ReviewersTab.js';
 import { SupportersTab } from './config/SupportersTab.js';
@@ -118,7 +118,7 @@ export function ConfigScreen(): React.JSX.Element {
   function openInEditor(): void {
     const configPath = path.join(process.cwd(), '.ca', 'config.json');
     const rawEditor = process.env['EDITOR'] || process.env['VISUAL'] || 'vi';
-    const editor = /^[a-zA-Z0-9/._\-]+$/.test(rawEditor) ? rawEditor : 'vi';
+    const editor = /^[a-zA-Z0-9/._-]+$/.test(rawEditor) ? rawEditor : 'vi';
     showToast(t('config.editor.opening'), 'info');
     try {
       spawnSync(editor, [configPath], { stdio: 'inherit' });
