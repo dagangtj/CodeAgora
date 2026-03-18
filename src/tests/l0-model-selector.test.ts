@@ -164,6 +164,61 @@ describe('ModelSelector', () => {
       expect(deepseekSelected).toBeGreaterThan(10);
     });
 
+    it('should select zero reasoning from non-reasoning pool (pre-filtered by index)', () => {
+      // index.ts filters out reasoning models before calling selectModels
+      const nonReasoningOnly = DIVERSE_MODELS.filter((m) => !m.isReasoning);
+
+      const result = selectModels({
+        count: 5,
+        availableModels: nonReasoningOnly,
+        banditState: createBanditState(),
+        constraints: { includeReasoning: false, familyDiversity: false },
+        rng: seededRng(),
+      });
+
+      expect(result.metadata.reasoningCount).toBe(0);
+      expect(result.selections.every((s) => !s.isReasoning)).toBe(true);
+    });
+
+    it('should enforce reasoning bounds when includeReasoning is true (default)', () => {
+      const result = selectModels({
+        count: 5,
+        availableModels: DIVERSE_MODELS,
+        banditState: createBanditState(),
+        constraints: { includeReasoning: true, reasoningMin: 1, reasoningMax: 2 },
+        rng: seededRng(),
+      });
+
+      expect(result.metadata.reasoningCount).toBeGreaterThanOrEqual(1);
+      expect(result.metadata.reasoningCount).toBeLessThanOrEqual(2);
+    });
+
+    it('should not force reasoning models via diversity when includeReasoning is false', () => {
+      // 6 non-reasoning models across 3 families, 1 reasoning model
+      const models = [
+        makeModel({ modelId: 'llama-3.3-70b', source: 'groq', family: 'llama', isReasoning: false }),
+        makeModel({ modelId: 'llama-3.1-8b', source: 'groq', family: 'llama', isReasoning: false }),
+        makeModel({ modelId: 'mistral-large', source: 'openrouter', family: 'mistral', isReasoning: false }),
+        makeModel({ modelId: 'mistral-small', source: 'openrouter', family: 'mistral', isReasoning: false }),
+        makeModel({ modelId: 'qwen3-235b', source: 'nim', family: 'qwen', isReasoning: false }),
+        makeModel({ modelId: 'qwen3-32b', source: 'nim', family: 'qwen', isReasoning: false }),
+        makeModel({ modelId: 'deepseek-r1', source: 'nim', family: 'deepseek', isReasoning: true }),
+      ];
+
+      const result = selectModels({
+        count: 3,
+        availableModels: models,
+        banditState: createBanditState(),
+        constraints: { includeReasoning: false, familyDiversity: true, minFamilies: 3, reasoningMin: 1 },
+        explorationRate: 0,
+        rng: seededRng(),
+      });
+
+      // reasoningMin=1 overridden to 0 — diversity should not force reasoning model
+      const reasoningSelected = result.selections.filter((s) => s.isReasoning);
+      expect(reasoningSelected.length).toBe(0);
+    });
+
     it('should use cold start (optimistic) when no bandit state', () => {
       const result = selectModels({
         count: 3,
