@@ -125,11 +125,16 @@ export async function resolveReviewers(
   );
 
   // D-13: Filter by contextMin constraint if specified
-  // TODO: includeReasoning constraint is defined in config but not yet enforced here
   const contextMin = routerConfig.constraints?.contextMin;
-  const candidateModels = contextMin
+  let candidateModels = contextMin
     ? healthyModels.filter((m) => parseContextK(m.context) >= parseContextK(contextMin))
     : healthyModels;
+
+  // Filter out reasoning models when includeReasoning is false
+  const includeReasoning = routerConfig.constraints?.includeReasoning ?? true;
+  if (!includeReasoning) {
+    candidateModels = candidateModels.filter((m) => !m.isReasoning);
+  }
 
   // Select models for auto slots
   const selection = selectModels({

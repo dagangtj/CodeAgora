@@ -82,6 +82,7 @@ export interface SelectionRequest {
   banditState: Map<string, BanditArm>;
   constraints?: {
     familyDiversity?: boolean;
+    includeReasoning?: boolean;
     minFamilies?: number;
     reasoningMin?: number;
     reasoningMax?: number;
@@ -120,6 +121,7 @@ export function selectModels(request: SelectionRequest): ModelSelection {
 
   const {
     familyDiversity = true,
+    includeReasoning = true,
     minFamilies = 3,
     reasoningMin = 1,
     reasoningMax = 2,
@@ -181,8 +183,8 @@ export function selectModels(request: SelectionRequest): ModelSelection {
   if (familyDiversity && selected.length >= minFamilies) {
     applyDiversityConstraints(selected, availableModels, usedKeys, {
       minFamilies,
-      reasoningMin,
-      reasoningMax,
+      reasoningMin: includeReasoning ? reasoningMin : 0,
+      reasoningMax: includeReasoning ? reasoningMax : 0,
     });
   }
 
