@@ -198,6 +198,44 @@ agora init --force
 agora doctor
 ```
 
+### `agora config`
+
+현재 설정을 검증하고 표시합니다.
+
+```bash
+agora config
+```
+
+### `agora providers`
+
+지원되는 프로바이더와 API 키 상태를 표시합니다.
+
+```bash
+agora providers
+```
+
+### `agora sessions`
+
+과거 리뷰 세션을 관리합니다.
+
+```bash
+agora sessions list                     # 최근 세션 목록
+agora sessions show 2026-03-19/001      # 세션 상세 보기
+agora sessions diff 001 002             # 두 세션 비교
+agora sessions stats                    # 리뷰 통계
+agora sessions prune --days 30          # 오래된 세션 삭제
+```
+
+### `agora notify <session-id>`
+
+과거 리뷰 세션의 알림을 설정된 Discord/Slack 웹훅으로 전송합니다.
+
+```bash
+agora notify 2026-03-19/001
+```
+
+설정에 `notifications.discord.webhookUrl` 또는 `notifications.slack.webhookUrl`이 필요합니다.
+
 ### `agora tui`
 
 인터랙티브 터미널 UI를 실행합니다 - 리뷰 설정 위자드, 실시간 파이프라인 진행, 토론 뷰어, 결과 드릴다운.
@@ -221,6 +259,16 @@ agora models
 ```bash
 agora explain 2026-03-16/001
 ```
+
+### `agora agreement <session>`
+
+세션의 리뷰어 합의 매트릭스를 표시합니다.
+
+```bash
+agora agreement 2026-03-19/001
+```
+
+각 리뷰어 쌍이 같은 이슈를 얼마나 자주 지적했는지 교차 합의율을 보여줍니다.
 
 ### `agora replay <session>`
 

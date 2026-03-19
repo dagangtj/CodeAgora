@@ -246,6 +246,16 @@ agora sessions diff 2026-03-10/001 2026-03-13/001
 agora sessions stats
 ```
 
+### `agora notify <session-id>`
+
+Send notification for a past review session to configured Discord/Slack webhooks.
+
+```bash
+agora notify 2026-03-19/001
+```
+
+Requires `notifications.discord.webhookUrl` or `notifications.slack.webhookUrl` in config.
+
 ### `agora tui`
 
 Launch the interactive terminal UI — review setup wizard, real-time pipeline progress, debate viewer, and results drill-down.
@@ -269,6 +279,16 @@ Generate a narrative explanation of a past review session — what was found, wh
 ```bash
 agora explain 2026-03-16/001
 ```
+
+### `agora agreement <session>`
+
+Show reviewer agreement matrix for a session.
+
+```bash
+agora agreement 2026-03-19/001
+```
+
+Displays a cross-reviewer agreement percentage matrix showing how often each pair of reviewers flagged the same issues.
 
 ### `agora replay <session>`
 
