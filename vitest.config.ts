@@ -6,24 +6,28 @@ const resolveReal = (mod: string) => fs.realpathSync(path.resolve(__dirname, 'no
 
 export default defineConfig({
   resolve: {
-    alias: {
-      '@codeagora/shared': path.resolve(__dirname, 'packages/shared/src'),
-      '@codeagora/core': path.resolve(__dirname, 'packages/core/src'),
-      '@codeagora/github': path.resolve(__dirname, 'packages/github/src'),
-      '@codeagora/notifications': path.resolve(__dirname, 'packages/notifications/src'),
-      '@codeagora/cli': path.resolve(__dirname, 'packages/cli/src'),
-      '@codeagora/tui': path.resolve(__dirname, 'packages/tui/src'),
-      '@codeagora/mcp': path.resolve(__dirname, 'packages/mcp/src'),
+    alias: [
+      // Subpath imports: @codeagora/cli/commands/doctor.js → packages/cli/src/commands/doctor.js
+      { find: /^@codeagora\/(shared|core|github|notifications|cli|tui|mcp|web)\/(.+)$/, replacement: path.resolve(__dirname, 'packages/$1/src/$2') },
+      // Bare imports: @codeagora/core → packages/core/src
+      { find: '@codeagora/shared', replacement: path.resolve(__dirname, 'packages/shared/src') },
+      { find: '@codeagora/core', replacement: path.resolve(__dirname, 'packages/core/src') },
+      { find: '@codeagora/github', replacement: path.resolve(__dirname, 'packages/github/src') },
+      { find: '@codeagora/notifications', replacement: path.resolve(__dirname, 'packages/notifications/src') },
+      { find: '@codeagora/cli', replacement: path.resolve(__dirname, 'packages/cli/src') },
+      { find: '@codeagora/tui', replacement: path.resolve(__dirname, 'packages/tui/src') },
+      { find: '@codeagora/mcp', replacement: path.resolve(__dirname, 'packages/mcp/src') },
+      { find: '@codeagora/web', replacement: path.resolve(__dirname, 'packages/web/src') },
       // Pin npm deps to real pnpm store paths for vi.mock interception
-      'ai': resolveReal('ai'),
-      '@ai-sdk/groq': resolveReal('@ai-sdk/groq'),
-      '@ai-sdk/google': resolveReal('@ai-sdk/google'),
-      '@ai-sdk/openai': resolveReal('@ai-sdk/openai'),
-      '@ai-sdk/openai-compatible': resolveReal('@ai-sdk/openai-compatible'),
-      '@ai-sdk/anthropic': resolveReal('@ai-sdk/anthropic'),
-      '@openrouter/ai-sdk-provider': resolveReal('@openrouter/ai-sdk-provider'),
-      '@octokit/rest': resolveReal('@octokit/rest'),
-    },
+      { find: 'ai', replacement: resolveReal('ai') },
+      { find: '@ai-sdk/groq', replacement: resolveReal('@ai-sdk/groq') },
+      { find: '@ai-sdk/google', replacement: resolveReal('@ai-sdk/google') },
+      { find: '@ai-sdk/openai', replacement: resolveReal('@ai-sdk/openai') },
+      { find: '@ai-sdk/openai-compatible', replacement: resolveReal('@ai-sdk/openai-compatible') },
+      { find: '@ai-sdk/anthropic', replacement: resolveReal('@ai-sdk/anthropic') },
+      { find: '@openrouter/ai-sdk-provider', replacement: resolveReal('@openrouter/ai-sdk-provider') },
+      { find: '@octokit/rest', replacement: resolveReal('@octokit/rest') },
+    ],
     // Deduplicate React/Ink to single instance (prevents "multiple copies" in monorepo)
     dedupe: ['react', 'ink', 'ink-select-input', 'ink-testing-library', 'zod', 'yaml'],
   },
@@ -37,7 +41,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       include: ['packages/*/src/**/*.ts'],
-      exclude: ['src/tests/**', 'packages/tui/**'],
+      exclude: ['packages/tui/**'],
     },
   },
 });

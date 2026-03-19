@@ -61,7 +61,7 @@ runs:
       id: review
       shell: bash
       run: |
-        node "$(dirname $(which codeagora))/../dist/github-action.js" \
+        node "$(dirname $(which codeagora))/../packages/github/dist/action.js" \
           --diff /tmp/codeagora-pr.diff \
           --pr "$PR_NUMBER" \
           --sha "$HEAD_SHA" \
