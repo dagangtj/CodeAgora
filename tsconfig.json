@@ -36,10 +36,8 @@
     }
   },
   "include": [
-    "./src/**/*.ts",
-    "./src/**/*.tsx",
     "./packages/*/src/**/*.ts",
     "./packages/*/src/**/*.tsx"
   ],
-  "exclude": ["node_modules", "dist", "src/test-real.ts"]
+  "exclude": ["node_modules", "dist"]
 }
