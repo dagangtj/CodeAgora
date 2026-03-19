@@ -651,6 +651,64 @@ program
     }
   });
 
+program
+  .command('language [locale]')
+  .description('Get or set language (en/ko)')
+  .action(async (locale?: string) => {
+    const caRoot = path.join(process.cwd(), '.ca');
+
+    if (!locale) {
+      // Show current language
+      try {
+        const config = await loadConfig();
+        const lang = config.language ?? detectLocale();
+        console.log(`Current language: ${lang === 'ko' ? 'ko (한국어)' : 'en (English)'}`);
+        console.log(`\nUsage: ${displayName} language <en|ko>`);
+      } catch {
+        const lang = detectLocale();
+        console.log(`No config found. System locale: ${lang === 'ko' ? 'ko (한국어)' : 'en (English)'}`);
+        console.log(`\nRun "${displayName} init" first, then "${displayName} language <en|ko>"`);
+      }
+      return;
+    }
+
+    if (locale !== 'en' && locale !== 'ko') {
+      console.error(`Unsupported language: "${locale}". Supported: en, ko`);
+      process.exit(1);
+    }
+
+    // Update config file
+    const jsonPath = path.join(caRoot, 'config.json');
+    const yamlPath = path.join(caRoot, 'config.yaml');
+
+    let configPath: string | null = null;
+    try { await fs.access(jsonPath); configPath = jsonPath; } catch { /* */ }
+    if (!configPath) {
+      try { await fs.access(yamlPath); configPath = yamlPath; } catch { /* */ }
+    }
+
+    if (!configPath) {
+      console.error(`No config file found. Run "${displayName} init" first.`);
+      process.exit(1);
+    }
+
+    if (configPath.endsWith('.yaml') || configPath.endsWith('.yml')) {
+      console.error('YAML config editing is not yet supported. Use .ca/config.json.');
+      process.exit(1);
+    }
+
+    const raw = await fs.readFile(configPath, 'utf-8');
+    const config = JSON.parse(raw);
+    config.language = locale;
+    await fs.writeFile(configPath, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+
+    setLocale(locale);
+    console.log(locale === 'ko'
+      ? `✓ 언어가 한국어(ko)로 설정되었습니다.`
+      : `✓ Language set to English (en).`
+    );
+  });
+
 // Only parse argv when this file is the direct entry point (not imported by tests).
 // In ESM the canonical check is comparing import.meta.url to the process entry module.
 // A simpler cross-env guard: skip parse when NODE_ENV is 'test' and argv hasn't been
