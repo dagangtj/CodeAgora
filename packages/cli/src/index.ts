@@ -486,7 +486,8 @@ sessionsCmd
   .option('--after <date>', 'Sessions after date (YYYY-MM-DD)')
   .option('--before <date>', 'Sessions before date (YYYY-MM-DD)')
   .option('--sort <field>', 'Sort by (date/status/issues)', 'date')
-  .action(async (opts: { limit?: number; status?: string; after?: string; before?: string; sort?: string }) => {
+  .option('--search <keyword>', 'Search sessions by keyword (case-insensitive)')
+  .action(async (opts: { limit?: number; status?: string; after?: string; before?: string; sort?: string; search?: string }) => {
     try {
       const sessions = await listSessions(process.cwd(), {
         limit: opts.limit,
@@ -494,6 +495,7 @@ sessionsCmd
         after: opts.after,
         before: opts.before,
         sort: opts.sort,
+        keyword: opts.search,
       });
       console.log(formatSessionList(sessions));
     } catch (error) {
@@ -875,6 +877,7 @@ Examples:
 Examples:
   ${displayName} sessions list                     List recent sessions
   ${displayName} sessions list --limit 5           Show last 5 sessions
+  ${displayName} sessions list --search "null"     Search sessions by keyword
   ${displayName} sessions show 2026-03-19/001      Show session details
   ${displayName} sessions diff 001 002             Compare two sessions
   ${displayName} sessions stats                    Show review statistics

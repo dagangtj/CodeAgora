@@ -40,6 +40,7 @@ export interface ListOptions {
   after?: string;    // 'YYYY-MM-DD'
   before?: string;   // 'YYYY-MM-DD'
   sort?: string;     // 'date' (default) | 'status' | 'issues'
+  keyword?: string;  // case-insensitive substring search across metadata + verdict
 }
 
 export interface SessionStats {
@@ -175,6 +176,24 @@ export async function listSessions(
   }
   if (options?.before) {
     filtered = filtered.filter((e) => e.date <= options.before!);
+  }
+
+  // Apply keyword search (case-insensitive substring match across metadata + verdict)
+  if (options?.keyword) {
+    const kw = options.keyword.toLowerCase();
+    const matched: SessionEntry[] = [];
+    for (const entry of filtered) {
+      const metadata = await readJsonFile(path.join(entry.dirPath, 'metadata.json'));
+      const verdict = await readJsonFile(path.join(entry.dirPath, 'head-verdict.json'));
+      const haystack = (
+        (metadata ? JSON.stringify(metadata) : '') +
+        (verdict ? JSON.stringify(verdict) : '')
+      ).toLowerCase();
+      if (haystack.includes(kw)) {
+        matched.push(entry);
+      }
+    }
+    filtered = matched;
   }
 
   // Apply sort
