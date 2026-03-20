@@ -856,7 +856,33 @@ export async function runInitInteractive(options: InitOptions): Promise<InitResu
           }
         }
 
-        // Fallback: text input
+        // No mapped provider — show all available models across all providers
+        if (catalog) {
+          const allModels: { model: ModelEntry; providerName: string }[] = [];
+          for (const caId of Object.keys(PROVIDER_ENV_VARS)) {
+            for (const m of getTopModels(catalog, caId, 5)) {
+              allModels.push({ model: m, providerName: caId });
+            }
+          }
+          if (allModels.length > 0) {
+            const modelOptions = allModels.map(({ model: m, providerName }) => {
+              const opt = formatModelOption(m);
+              return { value: opt.value, label: `${providerName}/${opt.label}` };
+            });
+            const modelSelection = await p.select({
+              message: ko ? `${backend} CLI \uBAA8\uB378 \uC120\uD0DD` : `Model for ${backend} CLI`,
+              options: modelOptions,
+            });
+            if (p.isCancel(modelSelection)) {
+              p.cancel(ko ? '\uC124\uC815\uC774 \uCDE8\uC18C\uB418\uC5C8\uC2B5\uB2C8\uB2E4.' : 'Setup cancelled.');
+              throw new UserCancelledError();
+            }
+            selections.push({ provider: backend, model: modelSelection as string, backend: 'cli' });
+            continue;
+          }
+        }
+
+        // Final fallback: text input
         const cliModelInput = await p.text({
           message: ko ? `${backend} CLI \uBAA8\uB378 \uC774\uB984?` : `Model for ${backend} CLI?`,
           placeholder: 'model-name',
