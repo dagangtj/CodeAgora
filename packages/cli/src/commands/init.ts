@@ -555,9 +555,9 @@ function formatModelOption(model: ModelEntry): { value: string; label: string } 
   const displayName = slash > 0 ? id.slice(slash + 1) : id;
 
   const tags: string[] = [];
-  const isFree = model.cost ? (model.cost.input === 0 && model.cost.output === 0) : false;
-  if (isFree) tags.push('FREE');
-  else tags.push('PAID');
+  const hasCost = model.cost && (model.cost.input > 0 || model.cost.output > 0);
+  if (hasCost) tags.push('PAID');
+  else tags.push('FREE');
   if (model.limit?.context) tags.push(`ctx=${Math.round(model.limit.context / 1000)}k`);
   if (model.reasoning) tags.push('reasoning');
 
@@ -660,13 +660,36 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
 }
 
 export async function runInitInteractive(options: InitOptions): Promise<InitResult> {
-  const { force, baseDir } = options;
+  let { force } = options;
+  const { baseDir } = options;
   const created: string[] = [];
   const skipped: string[] = [];
   const warnings: string[] = [];
   const ko = isKorean();
 
   p.intro(t('cli.init.welcome'));
+
+  // Check if config already exists — ask to overwrite
+  if (!force) {
+    const configJsonPath = path.join(baseDir, '.ca', 'config.json');
+    const configYamlPath = path.join(baseDir, '.ca', 'config.yaml');
+    const existingConfig = await fs.access(configJsonPath).then(() => configJsonPath).catch(() =>
+      fs.access(configYamlPath).then(() => configYamlPath).catch(() => null)
+    );
+    if (existingConfig) {
+      const overwrite = await p.confirm({
+        message: ko
+          ? `\uC124\uC815 \uD30C\uC77C\uC774 \uC774\uBBF8 \uC788\uC2B5\uB2C8\uB2E4 (${path.basename(existingConfig)}). \uB36E\uC5B4\uC4F0\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?`
+          : `Config already exists (${path.basename(existingConfig)}). Overwrite?`,
+      });
+      if (p.isCancel(overwrite) || !overwrite) {
+        p.cancel(ko ? '\uC124\uC815\uC774 \uCDE8\uC18C\uB418\uC5C8\uC2B5\uB2C8\uB2E4.' : 'Setup cancelled.');
+        throw new UserCancelledError();
+      }
+      // Set force to true so writeFile won't skip
+      force = true;
+    }
+  }
 
   // Detect environment, catalog, and CLI backends in parallel
   const [env, catalog, cliBackends] = await Promise.all([
@@ -795,46 +818,56 @@ export async function runInitInteractive(options: InitOptions): Promise<InitResu
     }
     const selectedProviders = providerSelection as string[];
 
-    // Per-provider model selection
+    // Per-provider model selection (multiple models per provider for diversity)
     const selections: ProviderModelSelection[] = [];
     for (const prov of selectedProviders) {
       // Handle CLI backend selections (e.g. "cli:claude")
       if (prov.startsWith('cli:')) {
         const backend = prov.slice(4);
-        selections.push({ provider: backend, model: backend, backend: 'cli' });
+        // CLI backends also need a model — ask which model to use
+        const cliModelInput = await p.text({
+          message: ko ? `${backend} CLI \uBAA8\uB378 \uC774\uB984?` : `Model for ${backend} CLI?`,
+          placeholder: backend,
+          defaultValue: backend,
+        });
+        if (p.isCancel(cliModelInput)) {
+          p.cancel(ko ? '\uC124\uC815\uC774 \uCDE8\uC18C\uB418\uC5C8\uC2B5\uB2C8\uB2E4.' : 'Setup cancelled.');
+          throw new UserCancelledError();
+        }
+        selections.push({ provider: backend, model: (cliModelInput as string) || backend, backend: 'cli' });
         continue;
       }
-
-      let selectedModel: string;
 
       if (catalog) {
         const topModels = getTopModels(catalog, prov, 20);
         if (topModels.length > 0) {
-          // Show model recommendation
+          // Show model list — allow multiselect for multiple reviewers from same provider
           const modelOptions = topModels.map((m) => formatModelOption(m));
-          const modelSelection = await p.select({
-            message: ko ? `${prov} \uBAA8\uB378 \uC120\uD0DD` : `Model for ${prov}`,
+          const modelSelection = await p.multiselect({
+            message: ko ? `${prov} \uBAA8\uB378 \uC120\uD0DD (\uC5EC\uB7EC \uAC1C \uAC00\uB2A5)` : `Models for ${prov} (select multiple for diverse reviewers)`,
             options: modelOptions,
+            required: true,
           });
           if (p.isCancel(modelSelection)) {
             p.cancel(ko ? '\uC124\uC815\uC774 \uCDE8\uC18C\uB418\uC5C8\uC2B5\uB2C8\uB2E4.' : 'Setup cancelled.');
             throw new UserCancelledError();
           }
-          selectedModel = modelSelection as string;
+          const selectedModels = modelSelection as string[];
 
-          // Find the ModelEntry for context window info
-          const entry = topModels.find((m) => {
-            const id = m.id;
-            const slash = id.indexOf('/');
-            return (slash > 0 ? id.slice(slash + 1) : id) === selectedModel;
-          });
-          selections.push({
-            provider: prov,
-            model: selectedModel,
-            backend: 'api',
-            contextWindow: entry?.limit?.context,
-            isFree: entry?.cost ? (entry.cost.input === 0 && entry.cost.output === 0) : undefined,
-          });
+          for (const selectedModel of selectedModels) {
+            const entry = topModels.find((m) => {
+              const id = m.id;
+              const slash = id.indexOf('/');
+              return (slash > 0 ? id.slice(slash + 1) : id) === selectedModel;
+            });
+            selections.push({
+              provider: prov,
+              model: selectedModel,
+              backend: 'api',
+              contextWindow: entry?.limit?.context,
+              isFree: entry?.cost ? (entry.cost.input === 0 && entry.cost.output === 0) : undefined,
+            });
+          }
           continue;
         }
       }
@@ -850,8 +883,8 @@ export async function runInitInteractive(options: InitOptions): Promise<InitResu
         p.cancel(ko ? '\uC124\uC815\uC774 \uCDE8\uC18C\uB418\uC5C8\uC2B5\uB2C8\uB2E4.' : 'Setup cancelled.');
         throw new UserCancelledError();
       }
-      selectedModel = (modelInput as string) || defaultModel;
-      selections.push({ provider: prov, model: selectedModel, backend: 'api' });
+      const inputModel = (modelInput as string) || defaultModel;
+      selections.push({ provider: prov, model: inputModel, backend: 'api' });
     }
 
     primaryProvider = selections[0]!.provider;
