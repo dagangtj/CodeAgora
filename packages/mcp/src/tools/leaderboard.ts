@@ -3,7 +3,7 @@
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getModelLeaderboard, formatLeaderboard } from '@codeagora/cli/commands/models.js';
+import { getModelLeaderboard, formatLeaderboard } from '@codeagora/core/l0/leaderboard.js';
 
 export function registerLeaderboard(server: McpServer): void {
   server.tool(

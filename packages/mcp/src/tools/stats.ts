@@ -3,7 +3,7 @@
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getSessionStats, formatSessionStats } from '@codeagora/cli/commands/sessions.js';
+import { getSessionStats, formatSessionStats } from '@codeagora/core/session/queries.js';
 
 export function registerStats(server: McpServer): void {
   server.tool(

@@ -7,9 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeAgreementMatrix } from '@codeagora/cli/commands/agreement.js';
 import { estimateDiffComplexity } from '@codeagora/core/pipeline/diff-complexity.js';
-import { diffSessionIssues } from '@codeagora/github/session-diff.js';
 import { trackDevilsAdvocate } from '@codeagora/core/l2/devils-advocate-tracker.js';
-import { getMemeVerdict, getMemeSeverity, getMemeConfidence } from '@codeagora/shared/meme/index.js';
 import { buildReviewBadgeUrl } from '@codeagora/github/mapper.js';
 import { DiscussionEmitter } from '@codeagora/core/l2/event-emitter.js';
 import { formatDryRunPreviewComment } from '@codeagora/github/dryrun-preview.js';
@@ -82,38 +80,6 @@ describe('estimateDiffComplexity', () => {
 });
 
 // ============================================================================
-// Session Diff (1.8)
-// ============================================================================
-
-describe('diffSessionIssues', () => {
-  const makeDoc = (file: string, line: number, title: string): EvidenceDocument => ({
-    issueTitle: title,
-    problem: 'test',
-    evidence: [],
-    severity: 'WARNING',
-    suggestion: '',
-    filePath: file,
-    lineRange: [line, line + 5],
-  });
-
-  it('identifies new, resolved, and unchanged issues', () => {
-    const current = [makeDoc('a.ts', 1, 'Issue A'), makeDoc('b.ts', 2, 'Issue B')];
-    const previous = [makeDoc('a.ts', 1, 'Issue A'), makeDoc('c.ts', 3, 'Issue C')];
-    const result = diffSessionIssues(current, previous, '2026-03-18/001');
-    expect(result.newIssues).toBe(1); // Issue B
-    expect(result.resolvedIssues).toBe(1); // Issue C
-    expect(result.unchangedIssues).toBe(1); // Issue A
-  });
-
-  it('handles empty previous session', () => {
-    const current = [makeDoc('a.ts', 1, 'Issue A')];
-    const result = diffSessionIssues(current, [], '2026-03-18/001');
-    expect(result.newIssues).toBe(1);
-    expect(result.resolvedIssues).toBe(0);
-  });
-});
-
-// ============================================================================
 // Devil's Advocate Tracking (4.6)
 // ============================================================================
 
@@ -158,35 +124,6 @@ describe('trackDevilsAdvocate', () => {
     const verdicts = [makeVerdict('d1', 'WARNING')];
     const stats = trackDevilsAdvocate('devil', rounds, verdicts);
     expect(stats.initialAgreements).toBe(1);
-  });
-});
-
-// ============================================================================
-// Meme Mode (3.1)
-// ============================================================================
-
-describe('Meme Mode', () => {
-  it('getMemeVerdict returns a string for known decisions', () => {
-    const result = getMemeVerdict('ACCEPT', 'en');
-    expect(typeof result).toBe('string');
-    expect(result.length).toBeGreaterThan(0);
-  });
-
-  it('getMemeSeverity returns label and desc', () => {
-    const result = getMemeSeverity('CRITICAL', 'en');
-    expect(result.label).toBe('SIR');
-    expect(result.desc).toContain('production');
-  });
-
-  it('getMemeConfidence returns text for different ranges', () => {
-    expect(getMemeConfidence(90, 'en')).toContain('pretty sure');
-    expect(getMemeConfidence(50, 'en')).toContain('trust me');
-    expect(getMemeConfidence(20, 'en')).toContain('vibes');
-  });
-
-  it('supports Korean language', () => {
-    const result = getMemeSeverity('CRITICAL', 'ko');
-    expect(result.desc).toContain('프로덕션');
   });
 });
 

@@ -29,6 +29,8 @@ import { analyzeTrivialDiff } from './auto-approve.js';
 import { computeL1Confidence, adjustConfidenceFromDiscussion } from './confidence.js';
 import { loadLearnedPatterns } from '../learning/store.js';
 import { applyLearnedPatterns } from '../learning/filter.js';
+import { loadReviewRules } from '../rules/loader.js';
+import { matchRules } from '../rules/matcher.js';
 import { DiscussionEmitter } from '../l2/event-emitter.js';
 import { estimateDiffComplexity } from './diff-complexity.js';
 import { generateReport, formatReportText } from './report.js';
@@ -344,6 +346,16 @@ export async function runPipeline(input: PipelineInput, progress?: ProgressEmitt
     let allEvidenceDocs: EvidenceDocument[] = allReviewResults.flatMap(
       (r) => r.evidenceDocs
     );
+
+    // === RULES: Apply custom review rules ===
+    const compiledRules = await loadReviewRules(process.cwd());
+    if (compiledRules && compiledRules.length > 0) {
+      const ruleEvidence = matchRules(diffContent, compiledRules);
+      if (ruleEvidence.length > 0) {
+        console.log(`[Rules] Matched ${ruleEvidence.length} rule-based issue(s)`);
+        allEvidenceDocs.push(...ruleEvidence);
+      }
+    }
 
     // === LEARNING: Apply dismissed patterns ===
     const learnedPatterns = await loadLearnedPatterns(process.cwd());

@@ -85,6 +85,10 @@ vi.mock('../../packages/shared/src/utils/logger.js', () => ({
   createLogger: vi.fn(),
 }));
 
+vi.mock('../../packages/core/src/rules/loader.js', () => ({
+  loadReviewRules: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock('fs/promises', () => ({
   default: {
     readFile: vi.fn(),

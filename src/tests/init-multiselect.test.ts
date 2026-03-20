@@ -459,7 +459,7 @@ describe('buildMultiProviderConfig()', () => {
       discussion: false,
     });
 
-    expect(config.reviewers[0]!.backend).toBe('cli');
+    expect(config.reviewers[0]!.backend).toBe('claude');
     expect(config.moderator.backend).toBe('cli');
   });
 

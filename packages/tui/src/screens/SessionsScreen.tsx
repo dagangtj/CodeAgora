@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { listSessions, showSession, getSessionStats } from '@codeagora/cli/commands/sessions.js';
-import type { SessionEntry, SessionDetail, SessionStats } from '@codeagora/cli/commands/sessions.js';
+import { listSessions, showSession, getSessionStats } from '@codeagora/core/session/queries.js';
+import type { SessionEntry, SessionDetail, SessionStats } from '@codeagora/core/session/queries.js';
 import { Panel } from '../components/Panel.js';
 import { ScrollableList } from '../components/ScrollableList.js';
 import { DetailRow } from '../components/DetailRow.js';
