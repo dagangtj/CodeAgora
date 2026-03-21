@@ -10,6 +10,7 @@ import * as p from '@clack/prompts';
 import { generateMinimalTemplate } from '@codeagora/core/config/templates.js';
 import { getModePreset } from '@codeagora/core/config/mode-presets.js';
 import { PROVIDER_ENV_VARS } from '@codeagora/shared/providers/env-vars.js';
+import { getProviderTier, getCliBackendTier, TIER_LABELS } from '@codeagora/shared/providers/tiers.js';
 import { loadModelsCatalog, getTopModels, getProviderStats } from '@codeagora/shared/data/models-dev.js';
 import type { ModelsCatalog, ModelEntry } from '@codeagora/shared/data/models-dev.js';
 import { detectEnvironment } from '@codeagora/shared/utils/env-detect.js';
@@ -526,7 +527,9 @@ function formatProviderOption(
   catalog: ModelsCatalog | null,
 ): { value: string; label: string; hint?: string } {
   const detected = !!process.env[envVar];
-  let label = name;
+  const tier = getProviderTier(name);
+  const tierTag = `[${TIER_LABELS[tier].label}]`;
+  let label = `${name} ${tierTag}`;
   if (detected) {
     label += '  \u2713 key detected';
   }
@@ -839,16 +842,21 @@ export async function runInitInteractive(options: InitOptions): Promise<InitResu
     format = formatSelection as 'json' | 'yaml';
 
     // Provider multiselect — detect available API keys + CLI backends, include catalog stats
-    const providerOptions = Object.entries(PROVIDER_ENV_VARS).map(([name, envVar]) =>
+    // Sort by tier (Tier 1 first) for better UX
+    const providerEntries = Object.entries(PROVIDER_ENV_VARS)
+      .sort((a, b) => getProviderTier(a[0]) - getProviderTier(b[0]));
+    const providerOptions = providerEntries.map(([name, envVar]) =>
       formatProviderOption(name, envVar, catalog),
     );
 
-    // Add detected CLI backends as selectable options
-    const availableCliTools = cliBackends.filter((c) => c.available);
+    // Add detected CLI backends as selectable options (sorted by tier)
+    const availableCliTools = [...cliBackends.filter((c) => c.available)]
+      .sort((a, b) => getCliBackendTier(a.backend) - getCliBackendTier(b.backend));
     for (const cli of availableCliTools) {
+      const cliTier = getCliBackendTier(cli.backend);
       providerOptions.push({
         value: `cli:${cli.backend}`,
-        label: `${cli.backend}  \u2713 CLI detected`,
+        label: `${cli.backend} [${TIER_LABELS[cliTier].label}]  \u2713 CLI detected`,
         hint: `backend: ${cli.bin}`,
       });
     }

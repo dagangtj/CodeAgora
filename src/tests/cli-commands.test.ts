@@ -288,22 +288,22 @@ describe('formatProviderList()', () => {
 
   it('shows "available" for a provider with API key set', () => {
     const providers: import('@codeagora/cli/commands/providers.js').ProviderInfo[] = [
-      { name: 'groq', apiKeyEnvVar: 'GROQ_API_KEY', apiKeySet: true },
+      { name: 'groq', apiKeyEnvVar: 'GROQ_API_KEY', apiKeySet: true, tier: 1 },
     ];
     expect(formatProviderList(providers)).toContain('available');
   });
 
   it('shows "no key" for a provider without API key', () => {
     const providers: import('@codeagora/cli/commands/providers.js').ProviderInfo[] = [
-      { name: 'groq', apiKeyEnvVar: 'GROQ_API_KEY', apiKeySet: false },
+      { name: 'groq', apiKeyEnvVar: 'GROQ_API_KEY', apiKeySet: false, tier: 1 },
     ];
     expect(formatProviderList(providers)).toContain('no key');
   });
 
   it('shows ✓ for providers with key and ✗ for those without', () => {
     const providers: import('@codeagora/cli/commands/providers.js').ProviderInfo[] = [
-      { name: 'groq', apiKeyEnvVar: 'GROQ_API_KEY', apiKeySet: true },
-      { name: 'google', apiKeyEnvVar: 'GOOGLE_API_KEY', apiKeySet: false },
+      { name: 'groq', apiKeyEnvVar: 'GROQ_API_KEY', apiKeySet: true, tier: 1 },
+      { name: 'google', apiKeyEnvVar: 'GOOGLE_API_KEY', apiKeySet: false, tier: 2 },
     ];
     const output = formatProviderList(providers);
     expect(output).toContain('\u2713 GROQ_API_KEY');

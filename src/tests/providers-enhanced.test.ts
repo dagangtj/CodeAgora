@@ -45,8 +45,8 @@ describe('listProviders with catalog enrichment', () => {
 describe('formatProviderList', () => {
   it('should render basic table without model columns when no catalog data', () => {
     const providers: ProviderInfo[] = [
-      { name: 'openai', apiKeyEnvVar: 'OPENAI_API_KEY', apiKeySet: true },
-      { name: 'groq', apiKeyEnvVar: 'GROQ_API_KEY', apiKeySet: false },
+      { name: 'openai', apiKeyEnvVar: 'OPENAI_API_KEY', apiKeySet: true, tier: 2 },
+      { name: 'groq', apiKeyEnvVar: 'GROQ_API_KEY', apiKeySet: false, tier: 1 },
     ];
 
     const output = formatProviderList(providers);
@@ -65,8 +65,8 @@ describe('formatProviderList', () => {
 
   it('should show Models and Free columns when catalog data present', () => {
     const providers: ProviderInfo[] = [
-      { name: 'openai', apiKeyEnvVar: 'OPENAI_API_KEY', apiKeySet: true, modelCount: 48, freeModelCount: 0 },
-      { name: 'groq', apiKeyEnvVar: 'GROQ_API_KEY', apiKeySet: true, modelCount: 15, freeModelCount: 15 },
+      { name: 'openai', apiKeyEnvVar: 'OPENAI_API_KEY', apiKeySet: true, tier: 2, modelCount: 48, freeModelCount: 0 },
+      { name: 'groq', apiKeyEnvVar: 'GROQ_API_KEY', apiKeySet: true, tier: 1, modelCount: 15, freeModelCount: 15 },
     ];
 
     const output = formatProviderList(providers);
@@ -79,8 +79,8 @@ describe('formatProviderList', () => {
 
   it('should show dashes for providers without catalog data in mixed list', () => {
     const providers: ProviderInfo[] = [
-      { name: 'openai', apiKeyEnvVar: 'OPENAI_API_KEY', apiKeySet: true, modelCount: 48, freeModelCount: 0 },
-      { name: 'custom', apiKeyEnvVar: 'CUSTOM_API_KEY', apiKeySet: false },
+      { name: 'openai', apiKeyEnvVar: 'OPENAI_API_KEY', apiKeySet: true, tier: 2, modelCount: 48, freeModelCount: 0 },
+      { name: 'custom', apiKeyEnvVar: 'CUSTOM_API_KEY', apiKeySet: false, tier: 3 },
     ];
 
     const output = formatProviderList(providers);
@@ -92,7 +92,7 @@ describe('formatProviderList', () => {
 
   it('should append CLI backends section when provided', () => {
     const providers: ProviderInfo[] = [
-      { name: 'openai', apiKeyEnvVar: 'OPENAI_API_KEY', apiKeySet: true },
+      { name: 'openai', apiKeyEnvVar: 'OPENAI_API_KEY', apiKeySet: true, tier: 2 },
     ];
     const cliBackends: DetectedCli[] = [
       { backend: 'claude', bin: 'claude', available: true },
@@ -110,7 +110,7 @@ describe('formatProviderList', () => {
 
   it('should not append CLI section when no backends provided', () => {
     const providers: ProviderInfo[] = [
-      { name: 'openai', apiKeyEnvVar: 'OPENAI_API_KEY', apiKeySet: true },
+      { name: 'openai', apiKeyEnvVar: 'OPENAI_API_KEY', apiKeySet: true, tier: 2 },
     ];
 
     const output = formatProviderList(providers);
