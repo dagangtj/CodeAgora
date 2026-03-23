@@ -93,6 +93,11 @@ function randomElement<T>(array: T[]): T | undefined {
  */
 export async function loadPersona(personaPath: string): Promise<string> {
   try {
+    // Inline text: if it doesn't look like a file path, use it directly
+    if (!personaPath.includes('/') && !personaPath.includes('\\') && !personaPath.endsWith('.md') && !personaPath.endsWith('.txt')) {
+      return personaPath.trim();
+    }
+
     // Block absolute paths explicitly before validation
     if (path.isAbsolute(personaPath)) {
       console.warn(`[Persona] Absolute path blocked: ${personaPath}`);

@@ -80,4 +80,30 @@ describe('loadPersona', () => {
     expect(result).toBe('');
     expect(mockReadFile).not.toHaveBeenCalled();
   });
+
+  it('returns inline text directly when not a file path', async () => {
+    const result = await loadPersona('Extremely skeptical senior engineer');
+    expect(result).toBe('Extremely skeptical senior engineer');
+    expect(mockReadFile).not.toHaveBeenCalled();
+  });
+
+  it('returns inline text with special characters', async () => {
+    const result = await loadPersona('Challenge every assumption — look for false positives');
+    expect(result).toBe('Challenge every assumption — look for false positives');
+    expect(mockReadFile).not.toHaveBeenCalled();
+  });
+
+  it('treats .md paths as file paths', async () => {
+    mockReadFile.mockResolvedValue('File persona content');
+    const result = await loadPersona('strict.md');
+    expect(result).toBe('File persona content');
+    expect(mockReadFile).toHaveBeenCalled();
+  });
+
+  it('treats paths with slashes as file paths', async () => {
+    mockReadFile.mockResolvedValue('Nested persona');
+    const result = await loadPersona('.ca/personas/strict.md');
+    expect(result).toBe('Nested persona');
+    expect(mockReadFile).toHaveBeenCalled();
+  });
 });
