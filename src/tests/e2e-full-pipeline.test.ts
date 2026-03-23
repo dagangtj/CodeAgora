@@ -574,11 +574,14 @@ describeFn('E2E: Full Pipeline with Real APIs', () => {
 
   describe('Phase 10: Web Server API', () => {
     let app: Awaited<ReturnType<typeof import('@codeagora/web/server/index.js').createApp>>;
+    let authToken: string;
 
     beforeAll(async () => {
       process.chdir(tmpDir);
       const { createApp } = await import('@codeagora/web/server/index.js');
+      const { getAuthToken } = await import('@codeagora/web/server/middleware.js');
       app = createApp();
+      authToken = getAuthToken();
     });
 
     it('GET /api/health returns 200 with ok status', async () => {
@@ -592,7 +595,7 @@ describeFn('E2E: Full Pipeline with Real APIs', () => {
     }, 10_000);
 
     it('GET /api/sessions returns session list', async () => {
-      const res = await app.request('/api/sessions');
+      const res = await app.request('/api/sessions', { headers: { Authorization: `Bearer ${authToken}` } });
       expect(res.status).toBe(200);
 
       const body = await res.json() as unknown[];
@@ -602,7 +605,7 @@ describeFn('E2E: Full Pipeline with Real APIs', () => {
     }, 10_000);
 
     it('GET /api/config returns configuration', async () => {
-      const res = await app.request('/api/config');
+      const res = await app.request('/api/config', { headers: { Authorization: `Bearer ${authToken}` } });
       expect(res.status).toBe(200);
 
       const body = await res.json() as Record<string, unknown>;
