@@ -13,6 +13,7 @@ import { runPipeline } from '@codeagora/core/pipeline/orchestrator.js';
 import { buildDiffPositionIndex } from './diff-parser.js';
 import { mapToGitHubReview } from './mapper.js';
 import { postReview, setCommitStatus, handleNeedsHuman } from './poster.js';
+import { createAppOctokit } from './client.js';
 import { buildSarifReport, serializeSarif } from './sarif.js';
 import { loadConfig } from '@codeagora/core/config/loader.js';
 import { validateDiffPath } from '@codeagora/shared/utils/path-validation.js';
@@ -131,7 +132,9 @@ async function main(): Promise<void> {
       : undefined,
   });
 
-  const postResult = await postReview(ghConfig, inputs.pr, review);
+  const appKit = await createAppOctokit(owner, repo);
+  if (appKit) console.log('Using GitHub App authentication (CodeAgora Bot)');
+  const postResult = await postReview(ghConfig, inputs.pr, review, appKit ?? undefined);
   await setCommitStatus(ghConfig, inputs.sha, postResult.verdict, postResult.reviewUrl);
 
   // Load config for GitHub integration features

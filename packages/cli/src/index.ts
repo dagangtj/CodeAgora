@@ -28,6 +28,7 @@ import { fetchPrDiff } from '@codeagora/github/pr-diff.js';
 import { buildDiffPositionIndex } from '@codeagora/github/diff-parser.js';
 import { mapToGitHubReview } from '@codeagora/github/mapper.js';
 import { postReview, setCommitStatus } from '@codeagora/github/poster.js';
+import { createAppOctokit } from '@codeagora/github/client.js';
 import { loadCredentials } from '@codeagora/core/config/credentials.js';
 import { registerLearnCommand } from './commands/learn.js';
 import { getModelLeaderboard, formatLeaderboard } from './commands/models.js';
@@ -361,7 +362,9 @@ program
             ? new Map(Object.entries(result.supporterModelMap))
             : undefined,
         });
-        const postResult = await postReview(ghConfig, prContext.prNumber, review);
+        const appKit = await createAppOctokit(prContext.owner, prContext.repo);
+        if (appKit && !options.quiet) console.error('Using GitHub App authentication (CodeAgora Bot)');
+        const postResult = await postReview(ghConfig, prContext.prNumber, review, appKit ?? undefined);
         await setCommitStatus(ghConfig, prContext.headSha, postResult.verdict, postResult.reviewUrl);
         if (!options.quiet) console.error(`Review posted: ${postResult.reviewUrl}`);
       }

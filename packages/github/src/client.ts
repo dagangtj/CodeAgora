@@ -1,15 +1,63 @@
 /**
  * GitHub Client Utilities
  * Pure functions for parsing GitHub URLs and creating config objects.
+ * Supports both PAT and GitHub App authentication.
  */
 
 import { Octokit } from '@octokit/rest';
+import { createAppAuth } from '@octokit/auth-app';
+import { readFileSync } from 'fs';
 
 /**
  * Create a reusable Octokit instance from a GitHubConfig.
  */
 export function createOctokit(config: GitHubConfig): Octokit {
   return new Octokit({ auth: config.token });
+}
+
+/**
+ * Create an Octokit instance authenticated as a GitHub App installation.
+ * Requires CODEAGORA_APP_ID and CODEAGORA_APP_PRIVATE_KEY (or _PATH) env vars.
+ * Returns null if App credentials are not configured.
+ */
+export async function createAppOctokit(owner: string, repo: string): Promise<Octokit | null> {
+  const appId = process.env['CODEAGORA_APP_ID'];
+  const privateKeyRaw = process.env['CODEAGORA_APP_PRIVATE_KEY'];
+  const privateKeyPath = process.env['CODEAGORA_APP_PRIVATE_KEY_PATH'];
+
+  if (!appId) return null;
+
+  let privateKey: string;
+  if (privateKeyRaw) {
+    privateKey = privateKeyRaw;
+  } else if (privateKeyPath) {
+    try {
+      const resolvedPath = privateKeyPath.replace(/^~/, process.env['HOME'] ?? '');
+      privateKey = readFileSync(resolvedPath, 'utf-8');
+    } catch {
+      console.warn('[GitHub App] Failed to read private key from path');
+      return null;
+    }
+  } else {
+    return null;
+  }
+
+  const appOctokit = new Octokit({
+    authStrategy: createAppAuth,
+    auth: { appId: Number(appId), privateKey },
+  });
+
+  // Find installation for the owner
+  try {
+    const { data: installation } = await appOctokit.apps.getRepoInstallation({ owner, repo });
+    return new Octokit({
+      authStrategy: createAppAuth,
+      auth: { appId: Number(appId), privateKey, installationId: installation.id },
+    });
+  } catch {
+    console.warn(`[GitHub App] No installation found for ${owner}/${repo}`);
+    return null;
+  }
 }
 
 export interface GitHubConfig {

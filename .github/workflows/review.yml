@@ -53,6 +53,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CODEAGORA_APP_ID: ${{ secrets.CODEAGORA_APP_ID }}
+          CODEAGORA_APP_PRIVATE_KEY: ${{ secrets.CODEAGORA_APP_PRIVATE_KEY }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           REPO: ${{ github.repository }}
