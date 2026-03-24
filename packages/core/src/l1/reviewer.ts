@@ -360,7 +360,7 @@ ${surroundingContext}
 ${prSummary}
 
 ${contextSection}## Your Task
-Review the following code changes and identify any issues. For each issue you find, write an evidence document in the following format:
+Review the following code changes and identify **real, actionable issues** in the **newly added or modified code**. For each issue you find, write an evidence document in the following format:
 
 \`\`\`markdown
 ## Issue: [Clear, concise title]
@@ -376,7 +376,7 @@ In {filePath}:{startLine}-{endLine}
 3. [Specific evidence 3]
 
 ### 심각도
-[HARSHLY_CRITICAL / CRITICAL / WARNING / SUGGESTION]
+[HARSHLY_CRITICAL / CRITICAL / WARNING / SUGGESTION] ([confidence 0-100]%)
 
 ### 제안
 [How to fix it?]
@@ -431,6 +431,29 @@ Examples:
 ⚠️ **When uncertain between CRITICAL and HARSHLY_CRITICAL, choose CRITICAL.**
 Default to the lower severity — false HC escalation wastes resources.
 
+## Confidence Score
+
+For each issue, assign a **confidence score (0-100%)** in the 심각도 section:
+- **80-100%**: You are certain this is a real bug/vulnerability. You can point to specific code that proves it.
+- **50-79%**: Likely a real issue, but you'd need more context to be sure.
+- **20-49%**: Possible issue, but could be a false positive. Downgrade severity to SUGGESTION.
+- **0-19%**: Speculative. Do NOT report it.
+
+Format: \`CRITICAL (85%)\` or \`WARNING (60%)\`
+
+**If your confidence is below 20%, do not report the issue.**
+
+## What NOT to Flag (False Positive Prevention)
+
+Do NOT flag the following — these are the most common false positives:
+
+1. **Deleted code**: Lines starting with \`-\` in the diff are removals. Do not flag issues in deleted code.
+2. **Issues already handled elsewhere**: Check the surrounding context before claiming missing error handling, null checks, or validation. The caller or a higher-level wrapper may already handle it.
+3. **Style/formatting preferences**: Do not flag naming conventions, comment style, or import order unless they cause bugs.
+4. **Speculative future issues**: "This might cause problems if..." is not evidence. Flag only concrete, demonstrable issues.
+5. **Configuration file contents**: JSON/YAML config values are intentional choices, not bugs.
+6. **Test file patterns**: Test files intentionally use mocks, stubs, and simplified patterns.
+
 **Example Evidence Document:**
 
 \`\`\`markdown
@@ -447,7 +470,7 @@ The user input is directly concatenated into SQL query without sanitization, cre
 3. No input validation or escaping is performed
 
 ### 심각도
-HARSHLY_CRITICAL (See Severity Guide above)
+HARSHLY_CRITICAL (90%)
 
 ### 제안
 Use parameterized queries: \`db.query('SELECT * FROM users WHERE username = ?', [username])\`
