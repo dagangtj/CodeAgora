@@ -59571,6 +59571,11 @@ var AutoApproveConfigSchema = external_exports.object({
   maxLines: external_exports.number().int().positive().default(5),
   allowedFilePatterns: external_exports.array(external_exports.string()).default(["*.md", "*.txt", "*.rst", "docs/**"])
 }).optional();
+var PromptsConfigSchema = external_exports.object({
+  reviewer: external_exports.string().optional(),
+  supporter: external_exports.string().optional(),
+  head: external_exports.string().optional()
+}).optional();
 var ConfigSchema = external_exports.object({
   mode: ReviewModeSchema.optional(),
   language: LanguageSchema.optional(),
@@ -59585,6 +59590,7 @@ var ConfigSchema = external_exports.object({
   notifications: NotificationsConfigSchema.optional(),
   github: GitHubIntegrationSchema.optional(),
   autoApprove: AutoApproveConfigSchema,
+  prompts: PromptsConfigSchema,
   plugins: external_exports.array(external_exports.string()).optional()
 });
 function validateConfig(configJson) {
@@ -60391,6 +60397,19 @@ async function executeReviewerWithGuards(input, retries, cb, hm) {
 `;
     }
   }
+  let reviewPrompt;
+  if (input.customPromptPath) {
+    try {
+      const { loadPersona: loadPersona2 } = await Promise.resolve().then(() => (init_moderator(), moderator_exports));
+      const template = await loadPersona2(input.customPromptPath);
+      reviewPrompt = template ? template.replace("{{DIFF}}", diffContent).replace("{{SUMMARY}}", prSummary) : buildReviewerPrompt(diffContent, prSummary, surroundingContext);
+    } catch {
+      reviewPrompt = buildReviewerPrompt(diffContent, prSummary, surroundingContext);
+    }
+  } else {
+    reviewPrompt = buildReviewerPrompt(diffContent, prSummary, surroundingContext);
+  }
+  const fullPrompt = personaPrefix + reviewPrompt;
   let lastError;
   const diffFilePaths = extractFileListFromDiff(diffContent);
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -60402,7 +60421,7 @@ async function executeReviewerWithGuards(input, retries, cb, hm) {
         backend: config2.backend,
         model: config2.model,
         provider: config2.provider,
-        prompt: personaPrefix + buildReviewerPrompt(diffContent, prSummary, surroundingContext),
+        prompt: fullPrompt,
         timeout: config2.timeout,
         signal: controller.signal,
         temperature: config2.temperature
@@ -60448,7 +60467,7 @@ async function executeReviewerWithGuards(input, retries, cb, hm) {
         backend: fb.backend,
         model: fb.model,
         provider: fb.provider,
-        prompt: personaPrefix + buildReviewerPrompt(diffContent, prSummary, surroundingContext),
+        prompt: fullPrompt,
         timeout: config2.timeout,
         temperature: config2.temperature
       });
@@ -62817,6 +62836,11 @@ async function executeL1Reviews(config2, chunks, surroundingContext) {
     if (surroundingContext) {
       for (const ri of reviewerInputs) {
         ri.surroundingContext = surroundingContext;
+      }
+    }
+    if (config2.prompts?.reviewer) {
+      for (const ri of reviewerInputs) {
+        ri.customPromptPath = config2.prompts.reviewer;
       }
     }
     const reviewResults = await executeReviewers(
