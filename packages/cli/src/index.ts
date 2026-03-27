@@ -693,6 +693,20 @@ program
     }
   });
 
+program
+  .command('demo')
+  .description('Launch TUI with demo review data (no API keys needed)')
+  .action(async () => {
+    try {
+      const { startTuiDemo } = await import('@codeagora/tui/index.js');
+      startTuiDemo();
+    } catch {
+      console.error('@codeagora/tui is not installed.');
+      console.error('Install: npm i -g @codeagora/tui');
+      process.exit(1);
+    }
+  });
+
 registerLearnCommand(program);
 
 // === Sprint 4+5 CLI commands ===

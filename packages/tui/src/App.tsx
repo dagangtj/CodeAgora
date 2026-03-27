@@ -15,11 +15,17 @@ import type { Screen } from './hooks/useRouter.js';
 import type { ReviewSetupParams } from './screens/ReviewSetupScreen.js';
 import type { PipelineResult } from '@codeagora/core/pipeline/orchestrator.js';
 
-export function App(): React.JSX.Element {
+interface AppProps {
+  /** When provided, the TUI starts directly on the results screen with this data. */
+  demoResult?: PipelineResult;
+}
+
+export function App(props: AppProps): React.JSX.Element {
+  const { demoResult } = props;
   const { exit } = useApp();
-  const { screen, navigate, goBack, canGoBack } = useRouter();
+  const { screen, navigate, goBack, canGoBack } = useRouter(demoResult ? 'results' : 'home');
   const [reviewParams, setReviewParams] = useState<ReviewSetupParams | undefined>();
-  const [pipelineResult, setPipelineResult] = useState<PipelineResult | undefined>();
+  const [pipelineResult, setPipelineResult] = useState<PipelineResult | undefined>(demoResult);
   const [diffContent, setDiffContent] = useState<string>('');
   const [evidenceDocs, setEvidenceDocs] = useState<Array<{
     severity: string;

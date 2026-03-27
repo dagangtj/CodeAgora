@@ -19,6 +19,7 @@
     "@codeagora/core": "workspace:*",
     "@codeagora/github": "workspace:*",
     "@codeagora/shared": "workspace:*",
+    "@codeagora/tui": "workspace:*",
     "commander": "^14.0.3",
     "ora": "^9.3.0",
     "@clack/prompts": "^1.1.0"
