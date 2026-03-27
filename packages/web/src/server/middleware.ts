@@ -62,6 +62,14 @@ export async function securityHeaders(c: Context, next: Next): Promise<Response 
 
 const requestCounts = new Map<string, { count: number; resetAt: number }>();
 
+// Evict expired rate-limit entries every 5 minutes to prevent unbounded memory growth
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of requestCounts) {
+    if (now > entry.resetAt) requestCounts.delete(ip);
+  }
+}, 5 * 60_000).unref();
+
 export async function rateLimiter(c: Context, next: Next): Promise<Response | void> {
   const ip =
     c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'local';

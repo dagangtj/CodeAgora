@@ -78,6 +78,7 @@ export interface PipelineSummary {
     filePath: string;
     lineRange: [number, number];
     title: string;
+    suggestion?: string;
   }>;
   totalDiscussions: number;
   resolved: number;

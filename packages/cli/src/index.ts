@@ -744,7 +744,11 @@ program
     try {
       const [date, id] = session.split('/');
       if (!date || !id) { console.error('Session must be YYYY-MM-DD/NNN'); process.exit(1); }
+      if (date.includes('..') || id.includes('..')) { console.error('Path traversal detected'); process.exit(1); }
       const sessionDir = path.join(process.cwd(), '.ca', 'sessions', date, id);
+      const resolved = path.resolve(sessionDir);
+      const expectedPrefix = path.resolve(path.join(process.cwd(), '.ca', 'sessions'));
+      if (!resolved.startsWith(expectedPrefix + path.sep)) { console.error('Session path outside sessions directory'); process.exit(1); }
       const raw = await fs.readFile(path.join(sessionDir, 'result.json'), 'utf-8');
       const result = JSON.parse(raw) as { reviewerMap?: Record<string, string[]> };
       if (!result.reviewerMap) { console.error('No reviewer map in session'); process.exit(1); }

@@ -18,6 +18,9 @@
   "exports": {
     ".": {
       "import": "./dist/index.js"
+    },
+    "./index.js": {
+      "import": "./dist/index.js"
     }
   },
   "files": [

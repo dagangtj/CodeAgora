@@ -107,9 +107,11 @@ async function main(): Promise<void> {
   // Use full evidence docs, discussions, and reviewer map from pipeline result
   const evidenceDocs = result.evidenceDocs ?? [];
   const discussions = result.discussions ?? [];
-  const reviewerMap = result.reviewerMap ? new Map(Object.entries(result.reviewerMap)) : undefined;
+  const reviewerMap = result.reviewerMap
+    ? new Map<string, string[]>(Object.entries(result.reviewerMap))
+    : undefined;
   const reviewerOpinions = result.reviewerOpinions
-    ? new Map(Object.entries(result.reviewerOpinions))
+    ? new Map<string, import('@codeagora/core/types/core.js').ReviewerOpinion[]>(Object.entries(result.reviewerOpinions))
     : undefined;
 
   // Build and post review
