@@ -3192,18 +3192,18 @@ var require_set = __commonJS({
       }
       static from(schema, iterable, ctx) {
         const { replacer } = ctx;
-        const set3 = new this(schema);
+        const set4 = new this(schema);
         if (iterable && Symbol.iterator in Object(iterable))
           for (let value of iterable) {
             if (typeof replacer === "function")
               value = replacer.call(iterable, value, value);
-            set3.items.push(Pair.createPair(value, null, ctx));
+            set4.items.push(Pair.createPair(value, null, ctx));
           }
-        return set3;
+        return set4;
       }
     };
     YAMLSet.tag = "tag:yaml.org,2002:set";
-    var set2 = {
+    var set3 = {
       collection: "map",
       identify: (value) => value instanceof Set,
       nodeClass: YAMLSet,
@@ -3222,7 +3222,7 @@ var require_set = __commonJS({
       }
     };
     exports.YAMLSet = YAMLSet;
-    exports.set = set2;
+    exports.set = set3;
   }
 });
 
@@ -3329,7 +3329,7 @@ var require_schema3 = __commonJS({
     var merge3 = require_merge();
     var omap = require_omap();
     var pairs = require_pairs();
-    var set2 = require_set();
+    var set3 = require_set();
     var timestamp = require_timestamp();
     var schema = [
       map2.map,
@@ -3349,7 +3349,7 @@ var require_schema3 = __commonJS({
       merge3.merge,
       omap.omap,
       pairs.pairs,
-      set2.set,
+      set3.set,
       timestamp.intTime,
       timestamp.floatTime,
       timestamp.timestamp
@@ -3376,7 +3376,7 @@ var require_tags = __commonJS({
     var omap = require_omap();
     var pairs = require_pairs();
     var schema$2 = require_schema3();
-    var set2 = require_set();
+    var set3 = require_set();
     var timestamp = require_timestamp();
     var schemas = /* @__PURE__ */ new Map([
       ["core", schema.schema],
@@ -3402,7 +3402,7 @@ var require_tags = __commonJS({
       omap: omap.omap,
       pairs: pairs.pairs,
       seq: seq.seq,
-      set: set2.set,
+      set: set3.set,
       timestamp: timestamp.timestamp
     };
     var coreKnownTags = {
@@ -3410,7 +3410,7 @@ var require_tags = __commonJS({
       "tag:yaml.org,2002:merge": merge3.merge,
       "tag:yaml.org,2002:omap": omap.omap,
       "tag:yaml.org,2002:pairs": pairs.pairs,
-      "tag:yaml.org,2002:set": set2.set,
+      "tag:yaml.org,2002:set": set3.set,
       "tag:yaml.org,2002:timestamp": timestamp.timestamp
     };
     function getTags(customTags, schemaName, addMergeTag) {
@@ -12124,10 +12124,10 @@ function jsonStringifyReplacer(_, value) {
   return value;
 }
 function cached(getter) {
-  const set2 = false;
+  const set3 = false;
   return {
     get value() {
-      if (!set2) {
+      if (!set3) {
         const value = getter();
         Object.defineProperty(this, "value", { value });
         return value;
@@ -12153,10 +12153,10 @@ function floatSafeRemainder2(val, step) {
   return valInt % stepInt / 10 ** decCount;
 }
 function defineLazy(object3, key, getter) {
-  const set2 = false;
+  const set3 = false;
   Object.defineProperty(object3, key, {
     get() {
-      if (!set2) {
+      if (!set3) {
         const value = getter();
         object3[key] = value;
         return value;
@@ -26623,12 +26623,12 @@ var require_token = __commonJS({
     var __toCommonJS = (mod) => __copyProps2(__defProp4({}, "__esModule", { value: true }), mod);
     var token_exports = {};
     __export3(token_exports, {
-      refreshToken: () => refreshToken
+      refreshToken: () => refreshToken2
     });
     module.exports = __toCommonJS(token_exports);
     var import_token_error = require_token_error();
     var import_token_util = require_token_util();
-    async function refreshToken() {
+    async function refreshToken2() {
       const { projectId, teamId } = (0, import_token_util.findProjectInfo)();
       let maybeToken = (0, import_token_util.loadToken)(projectId);
       if (!maybeToken || (0, import_token_util.isExpired)((0, import_token_util.getTokenPayload)(maybeToken.token))) {
@@ -26693,12 +26693,12 @@ var require_get_vercel_oidc_token = __commonJS({
         err2 = error40;
       }
       try {
-        const [{ getTokenPayload, isExpired }, { refreshToken }] = await Promise.all([
+        const [{ getTokenPayload, isExpired }, { refreshToken: refreshToken2 }] = await Promise.all([
           await Promise.resolve().then(() => __toESM(require_token_util())),
           await Promise.resolve().then(() => __toESM(require_token()))
         ]);
         if (!token || isExpired(getTokenPayload(token))) {
-          await refreshToken();
+          await refreshToken2();
           token = getVercelOidcTokenSync2();
         }
       } catch (error40) {
@@ -26939,12 +26939,12 @@ function createGatewayProvider(options = {}) {
   const baseURL = (_b93 = withoutTrailingSlash(options.baseURL)) != null ? _b93 : "https://ai-gateway.vercel.sh/v3/ai";
   const getHeaders = async () => {
     try {
-      const auth2 = await getGatewayAuthToken(options);
+      const auth6 = await getGatewayAuthToken(options);
       return withUserAgentSuffix(
         {
-          Authorization: `Bearer ${auth2.token}`,
+          Authorization: `Bearer ${auth6.token}`,
           "ai-gateway-protocol-version": AI_GATEWAY_PROTOCOL_VERSION,
-          [GATEWAY_AUTH_METHOD_HEADER]: auth2.authMethod,
+          [GATEWAY_AUTH_METHOD_HEADER]: auth6.authMethod,
           ...options.headers
         },
         `ai-sdk/gateway/${VERSION2}`
@@ -63731,18 +63731,18 @@ function register(state, name25, method, options) {
 }
 
 // node_modules/.pnpm/before-after-hook@4.0.0/node_modules/before-after-hook/lib/add.js
-function addHook(state, kind, name25, hook2) {
-  const orig = hook2;
+function addHook(state, kind, name25, hook6) {
+  const orig = hook6;
   if (!state.registry[name25]) {
     state.registry[name25] = [];
   }
   if (kind === "before") {
-    hook2 = (method, options) => {
+    hook6 = (method, options) => {
       return Promise.resolve().then(orig.bind(null, options)).then(method.bind(null, options));
     };
   }
   if (kind === "after") {
-    hook2 = (method, options) => {
+    hook6 = (method, options) => {
       let result;
       return Promise.resolve().then(method.bind(null, options)).then((result_) => {
         result = result_;
@@ -63753,14 +63753,14 @@ function addHook(state, kind, name25, hook2) {
     };
   }
   if (kind === "error") {
-    hook2 = (method, options) => {
+    hook6 = (method, options) => {
       return Promise.resolve().then(method.bind(null, options)).catch((error40) => {
         return orig(error40, options);
       });
     };
   }
   state.registry[name25].push({
-    hook: hook2,
+    hook: hook6,
     orig
   });
 }
@@ -63782,16 +63782,16 @@ function removeHook(state, name25, method) {
 // node_modules/.pnpm/before-after-hook@4.0.0/node_modules/before-after-hook/index.js
 var bind = Function.bind;
 var bindable = bind.bind(bind);
-function bindApi(hook2, state, name25) {
+function bindApi(hook6, state, name25) {
   const removeHookRef = bindable(removeHook, null).apply(
     null,
     name25 ? [state, name25] : [state]
   );
-  hook2.api = { remove: removeHookRef };
-  hook2.remove = removeHookRef;
+  hook6.api = { remove: removeHookRef };
+  hook6.remove = removeHookRef;
   ["before", "error", "after", "wrap"].forEach((kind) => {
     const args = name25 ? [state, kind, name25] : [state, kind];
-    hook2[kind] = hook2.api[kind] = bindable(addHook, null).apply(null, args);
+    hook6[kind] = hook6.api[kind] = bindable(addHook, null).apply(null, args);
   });
 }
 function Singular() {
@@ -63807,9 +63807,9 @@ function Collection() {
   const state = {
     registry: {}
   };
-  const hook2 = register.bind(null, state);
-  bindApi(hook2, state);
-  return hook2;
+  const hook6 = register.bind(null, state);
+  bindApi(hook6, state);
+  return hook6;
 }
 var before_after_hook_default = { Singular, Collection };
 
@@ -64649,13 +64649,13 @@ var Octokit = class {
     return NewOctokit;
   }
   constructor(options = {}) {
-    const hook2 = new before_after_hook_default.Collection();
+    const hook6 = new before_after_hook_default.Collection();
     const requestDefaults = {
       baseUrl: request.endpoint.DEFAULTS.baseUrl,
       headers: {},
       request: Object.assign({}, options.request, {
         // @ts-ignore internal usage only, no need to type
-        hook: hook2.bind(null, "request")
+        hook: hook6.bind(null, "request")
       }),
       mediaType: {
         previews: [],
@@ -64675,20 +64675,20 @@ var Octokit = class {
     this.request = request.defaults(requestDefaults);
     this.graphql = withCustomRequest(this.request).defaults(requestDefaults);
     this.log = createLogger2(options.log);
-    this.hook = hook2;
+    this.hook = hook6;
     if (!options.authStrategy) {
       if (!options.auth) {
         this.auth = async () => ({
           type: "unauthenticated"
         });
       } else {
-        const auth2 = createTokenAuth(options.auth);
-        hook2.wrap("request", auth2.hook);
-        this.auth = auth2;
+        const auth6 = createTokenAuth(options.auth);
+        hook6.wrap("request", auth6.hook);
+        this.auth = auth6;
       }
     } else {
       const { authStrategy, ...otherOptions } = options;
-      const auth2 = authStrategy(
+      const auth6 = authStrategy(
         Object.assign(
           {
             request: this.request,
@@ -64704,8 +64704,8 @@ var Octokit = class {
           options.auth
         )
       );
-      hook2.wrap("request", auth2.hook);
-      this.auth = auth2;
+      hook6.wrap("request", auth6.hook);
+      this.auth = auth6;
     }
     const classConstructor = this.constructor;
     for (let i = 0; i < classConstructor.plugins.length; ++i) {
@@ -67309,8 +67309,1324 @@ var Octokit2 = Octokit.plugin(requestLog, legacyRestEndpointMethods, paginateRes
   }
 );
 
+// node_modules/.pnpm/@octokit+oauth-methods@6.0.2/node_modules/@octokit/oauth-methods/dist-bundle/index.js
+function requestToOAuthBaseUrl(request2) {
+  const endpointDefaults = request2.endpoint.DEFAULTS;
+  return /^https:\/\/(api\.)?github\.com$/.test(endpointDefaults.baseUrl) ? "https://github.com" : endpointDefaults.baseUrl.replace("/api/v3", "");
+}
+async function oauthRequest(request2, route, parameters) {
+  const withOAuthParameters = {
+    baseUrl: requestToOAuthBaseUrl(request2),
+    headers: {
+      accept: "application/json"
+    },
+    ...parameters
+  };
+  const response = await request2(route, withOAuthParameters);
+  if ("error" in response.data) {
+    const error40 = new RequestError(
+      `${response.data.error_description} (${response.data.error}, ${response.data.error_uri})`,
+      400,
+      {
+        request: request2.endpoint.merge(
+          route,
+          withOAuthParameters
+        )
+      }
+    );
+    error40.response = response;
+    throw error40;
+  }
+  return response;
+}
+async function exchangeWebFlowCode(options) {
+  const request2 = options.request || request;
+  const response = await oauthRequest(
+    request2,
+    "POST /login/oauth/access_token",
+    {
+      client_id: options.clientId,
+      client_secret: options.clientSecret,
+      code: options.code,
+      redirect_uri: options.redirectUrl
+    }
+  );
+  const authentication = {
+    clientType: options.clientType,
+    clientId: options.clientId,
+    clientSecret: options.clientSecret,
+    token: response.data.access_token,
+    scopes: response.data.scope.split(/\s+/).filter(Boolean)
+  };
+  if (options.clientType === "github-app") {
+    if ("refresh_token" in response.data) {
+      const apiTimeInMs = new Date(response.headers.date).getTime();
+      authentication.refreshToken = response.data.refresh_token, authentication.expiresAt = toTimestamp(
+        apiTimeInMs,
+        response.data.expires_in
+      ), authentication.refreshTokenExpiresAt = toTimestamp(
+        apiTimeInMs,
+        response.data.refresh_token_expires_in
+      );
+    }
+    delete authentication.scopes;
+  }
+  return { ...response, authentication };
+}
+function toTimestamp(apiTimeInMs, expirationInSeconds) {
+  return new Date(apiTimeInMs + expirationInSeconds * 1e3).toISOString();
+}
+async function createDeviceCode(options) {
+  const request2 = options.request || request;
+  const parameters = {
+    client_id: options.clientId
+  };
+  if ("scopes" in options && Array.isArray(options.scopes)) {
+    parameters.scope = options.scopes.join(" ");
+  }
+  return oauthRequest(request2, "POST /login/device/code", parameters);
+}
+async function exchangeDeviceCode(options) {
+  const request2 = options.request || request;
+  const response = await oauthRequest(
+    request2,
+    "POST /login/oauth/access_token",
+    {
+      client_id: options.clientId,
+      device_code: options.code,
+      grant_type: "urn:ietf:params:oauth:grant-type:device_code"
+    }
+  );
+  const authentication = {
+    clientType: options.clientType,
+    clientId: options.clientId,
+    token: response.data.access_token,
+    scopes: response.data.scope.split(/\s+/).filter(Boolean)
+  };
+  if ("clientSecret" in options) {
+    authentication.clientSecret = options.clientSecret;
+  }
+  if (options.clientType === "github-app") {
+    if ("refresh_token" in response.data) {
+      const apiTimeInMs = new Date(response.headers.date).getTime();
+      authentication.refreshToken = response.data.refresh_token, authentication.expiresAt = toTimestamp2(
+        apiTimeInMs,
+        response.data.expires_in
+      ), authentication.refreshTokenExpiresAt = toTimestamp2(
+        apiTimeInMs,
+        response.data.refresh_token_expires_in
+      );
+    }
+    delete authentication.scopes;
+  }
+  return { ...response, authentication };
+}
+function toTimestamp2(apiTimeInMs, expirationInSeconds) {
+  return new Date(apiTimeInMs + expirationInSeconds * 1e3).toISOString();
+}
+async function checkToken(options) {
+  const request2 = options.request || request;
+  const response = await request2("POST /applications/{client_id}/token", {
+    headers: {
+      authorization: `basic ${btoa(
+        `${options.clientId}:${options.clientSecret}`
+      )}`
+    },
+    client_id: options.clientId,
+    access_token: options.token
+  });
+  const authentication = {
+    clientType: options.clientType,
+    clientId: options.clientId,
+    clientSecret: options.clientSecret,
+    token: options.token,
+    scopes: response.data.scopes
+  };
+  if (response.data.expires_at)
+    authentication.expiresAt = response.data.expires_at;
+  if (options.clientType === "github-app") {
+    delete authentication.scopes;
+  }
+  return { ...response, authentication };
+}
+async function refreshToken(options) {
+  const request2 = options.request || request;
+  const response = await oauthRequest(
+    request2,
+    "POST /login/oauth/access_token",
+    {
+      client_id: options.clientId,
+      client_secret: options.clientSecret,
+      grant_type: "refresh_token",
+      refresh_token: options.refreshToken
+    }
+  );
+  const apiTimeInMs = new Date(response.headers.date).getTime();
+  const authentication = {
+    clientType: "github-app",
+    clientId: options.clientId,
+    clientSecret: options.clientSecret,
+    token: response.data.access_token,
+    refreshToken: response.data.refresh_token,
+    expiresAt: toTimestamp3(apiTimeInMs, response.data.expires_in),
+    refreshTokenExpiresAt: toTimestamp3(
+      apiTimeInMs,
+      response.data.refresh_token_expires_in
+    )
+  };
+  return { ...response, authentication };
+}
+function toTimestamp3(apiTimeInMs, expirationInSeconds) {
+  return new Date(apiTimeInMs + expirationInSeconds * 1e3).toISOString();
+}
+async function resetToken(options) {
+  const request2 = options.request || request;
+  const auth6 = btoa(`${options.clientId}:${options.clientSecret}`);
+  const response = await request2(
+    "PATCH /applications/{client_id}/token",
+    {
+      headers: {
+        authorization: `basic ${auth6}`
+      },
+      client_id: options.clientId,
+      access_token: options.token
+    }
+  );
+  const authentication = {
+    clientType: options.clientType,
+    clientId: options.clientId,
+    clientSecret: options.clientSecret,
+    token: response.data.token,
+    scopes: response.data.scopes
+  };
+  if (response.data.expires_at)
+    authentication.expiresAt = response.data.expires_at;
+  if (options.clientType === "github-app") {
+    delete authentication.scopes;
+  }
+  return { ...response, authentication };
+}
+async function deleteToken(options) {
+  const request2 = options.request || request;
+  const auth6 = btoa(`${options.clientId}:${options.clientSecret}`);
+  return request2(
+    "DELETE /applications/{client_id}/token",
+    {
+      headers: {
+        authorization: `basic ${auth6}`
+      },
+      client_id: options.clientId,
+      access_token: options.token
+    }
+  );
+}
+async function deleteAuthorization(options) {
+  const request2 = options.request || request;
+  const auth6 = btoa(`${options.clientId}:${options.clientSecret}`);
+  return request2(
+    "DELETE /applications/{client_id}/grant",
+    {
+      headers: {
+        authorization: `basic ${auth6}`
+      },
+      client_id: options.clientId,
+      access_token: options.token
+    }
+  );
+}
+
+// node_modules/.pnpm/@octokit+auth-oauth-device@8.0.3/node_modules/@octokit/auth-oauth-device/dist-bundle/index.js
+async function getOAuthAccessToken(state, options) {
+  const cachedAuthentication = getCachedAuthentication(state, options.auth);
+  if (cachedAuthentication) return cachedAuthentication;
+  const { data: verification } = await createDeviceCode({
+    clientType: state.clientType,
+    clientId: state.clientId,
+    request: options.request || state.request,
+    // @ts-expect-error the extra code to make TS happy is not worth it
+    scopes: options.auth.scopes || state.scopes
+  });
+  await state.onVerification(verification);
+  const authentication = await waitForAccessToken(
+    options.request || state.request,
+    state.clientId,
+    state.clientType,
+    verification
+  );
+  state.authentication = authentication;
+  return authentication;
+}
+function getCachedAuthentication(state, auth22) {
+  if (auth22.refresh === true) return false;
+  if (!state.authentication) return false;
+  if (state.clientType === "github-app") {
+    return state.authentication;
+  }
+  const authentication = state.authentication;
+  const newScope = ("scopes" in auth22 && auth22.scopes || state.scopes).join(
+    " "
+  );
+  const currentScope = authentication.scopes.join(" ");
+  return newScope === currentScope ? authentication : false;
+}
+async function wait(seconds) {
+  await new Promise((resolve2) => setTimeout(resolve2, seconds * 1e3));
+}
+async function waitForAccessToken(request2, clientId, clientType, verification) {
+  try {
+    const options = {
+      clientId,
+      request: request2,
+      code: verification.device_code
+    };
+    const { authentication } = clientType === "oauth-app" ? await exchangeDeviceCode({
+      ...options,
+      clientType: "oauth-app"
+    }) : await exchangeDeviceCode({
+      ...options,
+      clientType: "github-app"
+    });
+    return {
+      type: "token",
+      tokenType: "oauth",
+      ...authentication
+    };
+  } catch (error40) {
+    if (!error40.response) throw error40;
+    const errorType = error40.response.data.error;
+    if (errorType === "authorization_pending") {
+      await wait(verification.interval);
+      return waitForAccessToken(request2, clientId, clientType, verification);
+    }
+    if (errorType === "slow_down") {
+      await wait(verification.interval + 7);
+      return waitForAccessToken(request2, clientId, clientType, verification);
+    }
+    throw error40;
+  }
+}
+async function auth2(state, authOptions) {
+  return getOAuthAccessToken(state, {
+    auth: authOptions
+  });
+}
+async function hook2(state, request2, route, parameters) {
+  let endpoint2 = request2.endpoint.merge(
+    route,
+    parameters
+  );
+  if (/\/login\/(oauth\/access_token|device\/code)$/.test(endpoint2.url)) {
+    return request2(endpoint2);
+  }
+  const { token } = await getOAuthAccessToken(state, {
+    request: request2,
+    auth: { type: "oauth" }
+  });
+  endpoint2.headers.authorization = `token ${token}`;
+  return request2(endpoint2);
+}
+var VERSION26 = "0.0.0-development";
+function createOAuthDeviceAuth(options) {
+  const requestWithDefaults = options.request || request.defaults({
+    headers: {
+      "user-agent": `octokit-auth-oauth-device.js/${VERSION26} ${getUserAgent()}`
+    }
+  });
+  const { request: request2 = requestWithDefaults, ...otherOptions } = options;
+  const state = options.clientType === "github-app" ? {
+    ...otherOptions,
+    clientType: "github-app",
+    request: request2
+  } : {
+    ...otherOptions,
+    clientType: "oauth-app",
+    request: request2,
+    scopes: options.scopes || []
+  };
+  if (!options.clientId) {
+    throw new Error(
+      '[@octokit/auth-oauth-device] "clientId" option must be set (https://github.com/octokit/auth-oauth-device.js#usage)'
+    );
+  }
+  if (!options.onVerification) {
+    throw new Error(
+      '[@octokit/auth-oauth-device] "onVerification" option must be a function (https://github.com/octokit/auth-oauth-device.js#usage)'
+    );
+  }
+  return Object.assign(auth2.bind(null, state), {
+    hook: hook2.bind(null, state)
+  });
+}
+
+// node_modules/.pnpm/@octokit+auth-oauth-user@6.0.2/node_modules/@octokit/auth-oauth-user/dist-bundle/index.js
+var VERSION27 = "0.0.0-development";
+async function getAuthentication(state) {
+  if ("code" in state.strategyOptions) {
+    const { authentication } = await exchangeWebFlowCode({
+      clientId: state.clientId,
+      clientSecret: state.clientSecret,
+      clientType: state.clientType,
+      onTokenCreated: state.onTokenCreated,
+      ...state.strategyOptions,
+      request: state.request
+    });
+    return {
+      type: "token",
+      tokenType: "oauth",
+      ...authentication
+    };
+  }
+  if ("onVerification" in state.strategyOptions) {
+    const deviceAuth = createOAuthDeviceAuth({
+      clientType: state.clientType,
+      clientId: state.clientId,
+      onTokenCreated: state.onTokenCreated,
+      ...state.strategyOptions,
+      request: state.request
+    });
+    const authentication = await deviceAuth({
+      type: "oauth"
+    });
+    return {
+      clientSecret: state.clientSecret,
+      ...authentication
+    };
+  }
+  if ("token" in state.strategyOptions) {
+    return {
+      type: "token",
+      tokenType: "oauth",
+      clientId: state.clientId,
+      clientSecret: state.clientSecret,
+      clientType: state.clientType,
+      onTokenCreated: state.onTokenCreated,
+      ...state.strategyOptions
+    };
+  }
+  throw new Error("[@octokit/auth-oauth-user] Invalid strategy options");
+}
+async function auth3(state, options = {}) {
+  if (!state.authentication) {
+    state.authentication = state.clientType === "oauth-app" ? await getAuthentication(state) : await getAuthentication(state);
+  }
+  if (state.authentication.invalid) {
+    throw new Error("[@octokit/auth-oauth-user] Token is invalid");
+  }
+  const currentAuthentication = state.authentication;
+  if ("expiresAt" in currentAuthentication) {
+    if (options.type === "refresh" || new Date(currentAuthentication.expiresAt) < /* @__PURE__ */ new Date()) {
+      const { authentication } = await refreshToken({
+        clientType: "github-app",
+        clientId: state.clientId,
+        clientSecret: state.clientSecret,
+        refreshToken: currentAuthentication.refreshToken,
+        request: state.request
+      });
+      state.authentication = {
+        tokenType: "oauth",
+        type: "token",
+        ...authentication
+      };
+    }
+  }
+  if (options.type === "refresh") {
+    if (state.clientType === "oauth-app") {
+      throw new Error(
+        "[@octokit/auth-oauth-user] OAuth Apps do not support expiring tokens"
+      );
+    }
+    if (!currentAuthentication.hasOwnProperty("expiresAt")) {
+      throw new Error("[@octokit/auth-oauth-user] Refresh token missing");
+    }
+    await state.onTokenCreated?.(state.authentication, {
+      type: options.type
+    });
+  }
+  if (options.type === "check" || options.type === "reset") {
+    const method = options.type === "check" ? checkToken : resetToken;
+    try {
+      const { authentication } = await method({
+        // @ts-expect-error making TS happy would require unnecessary code so no
+        clientType: state.clientType,
+        clientId: state.clientId,
+        clientSecret: state.clientSecret,
+        token: state.authentication.token,
+        request: state.request
+      });
+      state.authentication = {
+        tokenType: "oauth",
+        type: "token",
+        // @ts-expect-error TBD
+        ...authentication
+      };
+      if (options.type === "reset") {
+        await state.onTokenCreated?.(state.authentication, {
+          type: options.type
+        });
+      }
+      return state.authentication;
+    } catch (error40) {
+      if (error40.status === 404) {
+        error40.message = "[@octokit/auth-oauth-user] Token is invalid";
+        state.authentication.invalid = true;
+      }
+      throw error40;
+    }
+  }
+  if (options.type === "delete" || options.type === "deleteAuthorization") {
+    const method = options.type === "delete" ? deleteToken : deleteAuthorization;
+    try {
+      await method({
+        // @ts-expect-error making TS happy would require unnecessary code so no
+        clientType: state.clientType,
+        clientId: state.clientId,
+        clientSecret: state.clientSecret,
+        token: state.authentication.token,
+        request: state.request
+      });
+    } catch (error40) {
+      if (error40.status !== 404) throw error40;
+    }
+    state.authentication.invalid = true;
+    return state.authentication;
+  }
+  return state.authentication;
+}
+var ROUTES_REQUIRING_BASIC_AUTH = /\/applications\/[^/]+\/(token|grant)s?/;
+function requiresBasicAuth(url2) {
+  return url2 && ROUTES_REQUIRING_BASIC_AUTH.test(url2);
+}
+async function hook3(state, request2, route, parameters = {}) {
+  const endpoint2 = request2.endpoint.merge(
+    route,
+    parameters
+  );
+  if (/\/login\/(oauth\/access_token|device\/code)$/.test(endpoint2.url)) {
+    return request2(endpoint2);
+  }
+  if (requiresBasicAuth(endpoint2.url)) {
+    const credentials = btoa(`${state.clientId}:${state.clientSecret}`);
+    endpoint2.headers.authorization = `basic ${credentials}`;
+    return request2(endpoint2);
+  }
+  const { token } = state.clientType === "oauth-app" ? await auth3({ ...state, request: request2 }) : await auth3({ ...state, request: request2 });
+  endpoint2.headers.authorization = "token " + token;
+  return request2(endpoint2);
+}
+function createOAuthUserAuth({
+  clientId,
+  clientSecret,
+  clientType = "oauth-app",
+  request: request2 = request.defaults({
+    headers: {
+      "user-agent": `octokit-auth-oauth-app.js/${VERSION27} ${getUserAgent()}`
+    }
+  }),
+  onTokenCreated,
+  ...strategyOptions
+}) {
+  const state = Object.assign({
+    clientType,
+    clientId,
+    clientSecret,
+    onTokenCreated,
+    strategyOptions,
+    request: request2
+  });
+  return Object.assign(auth3.bind(null, state), {
+    // @ts-expect-error not worth the extra code needed to appease TS
+    hook: hook3.bind(null, state)
+  });
+}
+createOAuthUserAuth.VERSION = VERSION27;
+
+// node_modules/.pnpm/@octokit+auth-oauth-app@9.0.3/node_modules/@octokit/auth-oauth-app/dist-bundle/index.js
+async function auth4(state, authOptions) {
+  if (authOptions.type === "oauth-app") {
+    return {
+      type: "oauth-app",
+      clientId: state.clientId,
+      clientSecret: state.clientSecret,
+      clientType: state.clientType,
+      headers: {
+        authorization: `basic ${btoa(
+          `${state.clientId}:${state.clientSecret}`
+        )}`
+      }
+    };
+  }
+  if ("factory" in authOptions) {
+    const { type, ...options } = {
+      ...authOptions,
+      ...state
+    };
+    return authOptions.factory(options);
+  }
+  const common = {
+    clientId: state.clientId,
+    clientSecret: state.clientSecret,
+    request: state.request,
+    ...authOptions
+  };
+  const userAuth = state.clientType === "oauth-app" ? await createOAuthUserAuth({
+    ...common,
+    clientType: state.clientType
+  }) : await createOAuthUserAuth({
+    ...common,
+    clientType: state.clientType
+  });
+  return userAuth();
+}
+async function hook4(state, request2, route, parameters) {
+  let endpoint2 = request2.endpoint.merge(
+    route,
+    parameters
+  );
+  if (/\/login\/(oauth\/access_token|device\/code)$/.test(endpoint2.url)) {
+    return request2(endpoint2);
+  }
+  if (state.clientType === "github-app" && !requiresBasicAuth(endpoint2.url)) {
+    throw new Error(
+      `[@octokit/auth-oauth-app] GitHub Apps cannot use their client ID/secret for basic authentication for endpoints other than "/applications/{client_id}/**". "${endpoint2.method} ${endpoint2.url}" is not supported.`
+    );
+  }
+  const credentials = btoa(`${state.clientId}:${state.clientSecret}`);
+  endpoint2.headers.authorization = `basic ${credentials}`;
+  try {
+    return await request2(endpoint2);
+  } catch (error40) {
+    if (error40.status !== 401) throw error40;
+    error40.message = `[@octokit/auth-oauth-app] "${endpoint2.method} ${endpoint2.url}" does not support clientId/clientSecret basic authentication.`;
+    throw error40;
+  }
+}
+var VERSION28 = "0.0.0-development";
+function createOAuthAppAuth(options) {
+  const state = Object.assign(
+    {
+      request: request.defaults({
+        headers: {
+          "user-agent": `octokit-auth-oauth-app.js/${VERSION28} ${getUserAgent()}`
+        }
+      }),
+      clientType: "oauth-app"
+    },
+    options
+  );
+  return Object.assign(auth4.bind(null, state), {
+    hook: hook4.bind(null, state)
+  });
+}
+
+// node_modules/.pnpm/universal-github-app-jwt@2.2.2/node_modules/universal-github-app-jwt/lib/utils.js
+function isPkcs1(privateKey) {
+  return privateKey.includes("-----BEGIN RSA PRIVATE KEY-----");
+}
+function isOpenSsh(privateKey) {
+  return privateKey.includes("-----BEGIN OPENSSH PRIVATE KEY-----");
+}
+function string2ArrayBuffer(str) {
+  const buf = new ArrayBuffer(str.length);
+  const bufView = new Uint8Array(buf);
+  for (let i = 0, strLen = str.length; i < strLen; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  return buf;
+}
+function getDERfromPEM(pem) {
+  const pemB64 = pem.trim().split("\n").slice(1, -1).join("");
+  const decoded = atob(pemB64);
+  return string2ArrayBuffer(decoded);
+}
+function getEncodedMessage(header, payload) {
+  return `${base64encodeJSON(header)}.${base64encodeJSON(payload)}`;
+}
+function base64encode(buffer) {
+  var binary = "";
+  var bytes = new Uint8Array(buffer);
+  var len = bytes.byteLength;
+  for (var i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return fromBase64(btoa(binary));
+}
+function fromBase64(base643) {
+  return base643.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+function base64encodeJSON(obj) {
+  return fromBase64(btoa(JSON.stringify(obj)));
+}
+
+// node_modules/.pnpm/universal-github-app-jwt@2.2.2/node_modules/universal-github-app-jwt/lib/crypto-node.js
+import { subtle } from "node:crypto";
+import { createPrivateKey } from "node:crypto";
+function convertPrivateKey(privateKey) {
+  if (!isPkcs1(privateKey)) return privateKey;
+  return createPrivateKey(privateKey).export({
+    type: "pkcs8",
+    format: "pem"
+  });
+}
+
+// node_modules/.pnpm/universal-github-app-jwt@2.2.2/node_modules/universal-github-app-jwt/lib/get-token.js
+async function getToken({ privateKey, payload }) {
+  const convertedPrivateKey = convertPrivateKey(privateKey);
+  if (isPkcs1(convertedPrivateKey)) {
+    throw new Error(
+      "[universal-github-app-jwt] Private Key is in PKCS#1 format, but only PKCS#8 is supported. See https://github.com/gr2m/universal-github-app-jwt#private-key-formats"
+    );
+  }
+  if (isOpenSsh(convertedPrivateKey)) {
+    throw new Error(
+      "[universal-github-app-jwt] Private Key is in OpenSSH format, but only PKCS#8 is supported. See https://github.com/gr2m/universal-github-app-jwt#private-key-formats"
+    );
+  }
+  const algorithm = {
+    name: "RSASSA-PKCS1-v1_5",
+    hash: { name: "SHA-256" }
+  };
+  const header = { alg: "RS256", typ: "JWT" };
+  const privateKeyDER = getDERfromPEM(convertedPrivateKey);
+  const importedKey = await subtle.importKey(
+    "pkcs8",
+    privateKeyDER,
+    algorithm,
+    false,
+    ["sign"]
+  );
+  const encodedMessage = getEncodedMessage(header, payload);
+  const encodedMessageArrBuf = string2ArrayBuffer(encodedMessage);
+  const signatureArrBuf = await subtle.sign(
+    algorithm.name,
+    importedKey,
+    encodedMessageArrBuf
+  );
+  const encodedSignature = base64encode(signatureArrBuf);
+  return `${encodedMessage}.${encodedSignature}`;
+}
+
+// node_modules/.pnpm/universal-github-app-jwt@2.2.2/node_modules/universal-github-app-jwt/index.js
+async function githubAppJwt({
+  id,
+  privateKey,
+  now: now2 = Math.floor(Date.now() / 1e3)
+}) {
+  const privateKeyWithNewlines = privateKey.replace(/\\n/g, "\n");
+  const nowWithSafetyMargin = now2 - 30;
+  const expiration = nowWithSafetyMargin + 60 * 10;
+  const payload = {
+    iat: nowWithSafetyMargin,
+    // Issued at time
+    exp: expiration,
+    iss: id
+  };
+  const token = await getToken({
+    privateKey: privateKeyWithNewlines,
+    payload
+  });
+  return {
+    appId: id,
+    expiration,
+    token
+  };
+}
+
+// node_modules/.pnpm/toad-cache@3.7.0/node_modules/toad-cache/dist/toad-cache.mjs
+var LruObject = class {
+  constructor(max = 1e3, ttlInMsecs = 0) {
+    if (isNaN(max) || max < 0) {
+      throw new Error("Invalid max value");
+    }
+    if (isNaN(ttlInMsecs) || ttlInMsecs < 0) {
+      throw new Error("Invalid ttl value");
+    }
+    this.first = null;
+    this.items = /* @__PURE__ */ Object.create(null);
+    this.last = null;
+    this.size = 0;
+    this.max = max;
+    this.ttl = ttlInMsecs;
+  }
+  bumpLru(item) {
+    if (this.last === item) {
+      return;
+    }
+    const last = this.last;
+    const next = item.next;
+    const prev = item.prev;
+    if (this.first === item) {
+      this.first = next;
+    }
+    item.next = null;
+    item.prev = last;
+    last.next = item;
+    if (prev !== null) {
+      prev.next = next;
+    }
+    if (next !== null) {
+      next.prev = prev;
+    }
+    this.last = item;
+  }
+  clear() {
+    this.items = /* @__PURE__ */ Object.create(null);
+    this.first = null;
+    this.last = null;
+    this.size = 0;
+  }
+  delete(key) {
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      const item = this.items[key];
+      delete this.items[key];
+      this.size--;
+      if (item.prev !== null) {
+        item.prev.next = item.next;
+      }
+      if (item.next !== null) {
+        item.next.prev = item.prev;
+      }
+      if (this.first === item) {
+        this.first = item.next;
+      }
+      if (this.last === item) {
+        this.last = item.prev;
+      }
+    }
+  }
+  deleteMany(keys) {
+    for (var i = 0; i < keys.length; i++) {
+      this.delete(keys[i]);
+    }
+  }
+  evict() {
+    if (this.size > 0) {
+      const item = this.first;
+      delete this.items[item.key];
+      if (--this.size === 0) {
+        this.first = null;
+        this.last = null;
+      } else {
+        this.first = item.next;
+        this.first.prev = null;
+      }
+    }
+  }
+  expiresAt(key) {
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      return this.items[key].expiry;
+    }
+  }
+  get(key) {
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      const item = this.items[key];
+      if (this.ttl > 0 && item.expiry <= Date.now()) {
+        this.delete(key);
+        return;
+      }
+      this.bumpLru(item);
+      return item.value;
+    }
+  }
+  getMany(keys) {
+    const result = [];
+    for (var i = 0; i < keys.length; i++) {
+      result.push(this.get(keys[i]));
+    }
+    return result;
+  }
+  keys() {
+    return Object.keys(this.items);
+  }
+  set(key, value) {
+    if (Object.prototype.hasOwnProperty.call(this.items, key)) {
+      const item2 = this.items[key];
+      item2.value = value;
+      item2.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
+      if (this.last !== item2) {
+        this.bumpLru(item2);
+      }
+      return;
+    }
+    if (this.max > 0 && this.size === this.max) {
+      this.evict();
+    }
+    const item = {
+      expiry: this.ttl > 0 ? Date.now() + this.ttl : this.ttl,
+      key,
+      prev: this.last,
+      next: null,
+      value
+    };
+    this.items[key] = item;
+    if (++this.size === 1) {
+      this.first = item;
+    } else {
+      this.last.next = item;
+    }
+    this.last = item;
+  }
+};
+
+// node_modules/.pnpm/@octokit+auth-app@8.2.0/node_modules/@octokit/auth-app/dist-node/index.js
+async function getAppAuthentication({
+  appId,
+  privateKey,
+  timeDifference,
+  createJwt
+}) {
+  try {
+    if (createJwt) {
+      const { jwt: jwt2, expiresAt } = await createJwt(appId, timeDifference);
+      return {
+        type: "app",
+        token: jwt2,
+        appId,
+        expiresAt
+      };
+    }
+    const authOptions = {
+      id: appId,
+      privateKey
+    };
+    if (timeDifference) {
+      Object.assign(authOptions, {
+        now: Math.floor(Date.now() / 1e3) + timeDifference
+      });
+    }
+    const appAuthentication = await githubAppJwt(authOptions);
+    return {
+      type: "app",
+      token: appAuthentication.token,
+      appId: appAuthentication.appId,
+      expiresAt: new Date(appAuthentication.expiration * 1e3).toISOString()
+    };
+  } catch (error40) {
+    if (privateKey === "-----BEGIN RSA PRIVATE KEY-----") {
+      throw new Error(
+        "The 'privateKey` option contains only the first line '-----BEGIN RSA PRIVATE KEY-----'. If you are setting it using a `.env` file, make sure it is set on a single line with newlines replaced by '\n'"
+      );
+    } else {
+      throw error40;
+    }
+  }
+}
+function getCache() {
+  return new LruObject(
+    // cache max. 15000 tokens, that will use less than 10mb memory
+    15e3,
+    // Cache for 1 minute less than GitHub expiry
+    1e3 * 60 * 59
+  );
+}
+async function get(cache, options) {
+  const cacheKey = optionsToCacheKey(options);
+  const result = await cache.get(cacheKey);
+  if (!result) {
+    return;
+  }
+  const [
+    token,
+    createdAt,
+    expiresAt,
+    repositorySelection,
+    permissionsString,
+    singleFileName
+  ] = result.split("|");
+  const permissions = options.permissions || permissionsString.split(/,/).reduce((permissions2, string4) => {
+    if (/!$/.test(string4)) {
+      permissions2[string4.slice(0, -1)] = "write";
+    } else {
+      permissions2[string4] = "read";
+    }
+    return permissions2;
+  }, {});
+  return {
+    token,
+    createdAt,
+    expiresAt,
+    permissions,
+    repositoryIds: options.repositoryIds,
+    repositoryNames: options.repositoryNames,
+    singleFileName,
+    repositorySelection
+  };
+}
+async function set2(cache, options, data) {
+  const key = optionsToCacheKey(options);
+  const permissionsString = options.permissions ? "" : Object.keys(data.permissions).map(
+    (name25) => `${name25}${data.permissions[name25] === "write" ? "!" : ""}`
+  ).join(",");
+  const value = [
+    data.token,
+    data.createdAt,
+    data.expiresAt,
+    data.repositorySelection,
+    permissionsString,
+    data.singleFileName
+  ].join("|");
+  await cache.set(key, value);
+}
+function optionsToCacheKey({
+  installationId,
+  permissions = {},
+  repositoryIds = [],
+  repositoryNames = []
+}) {
+  const permissionsString = Object.keys(permissions).sort().map((name25) => permissions[name25] === "read" ? name25 : `${name25}!`).join(",");
+  const repositoryIdsString = repositoryIds.sort().join(",");
+  const repositoryNamesString = repositoryNames.join(",");
+  return [
+    installationId,
+    repositoryIdsString,
+    repositoryNamesString,
+    permissionsString
+  ].filter(Boolean).join("|");
+}
+function toTokenAuthentication({
+  installationId,
+  token,
+  createdAt,
+  expiresAt,
+  repositorySelection,
+  permissions,
+  repositoryIds,
+  repositoryNames,
+  singleFileName
+}) {
+  return Object.assign(
+    {
+      type: "token",
+      tokenType: "installation",
+      token,
+      installationId,
+      permissions,
+      createdAt,
+      expiresAt,
+      repositorySelection
+    },
+    repositoryIds ? { repositoryIds } : null,
+    repositoryNames ? { repositoryNames } : null,
+    singleFileName ? { singleFileName } : null
+  );
+}
+async function getInstallationAuthentication(state, options, customRequest) {
+  const installationId = Number(options.installationId || state.installationId);
+  if (!installationId) {
+    throw new Error(
+      "[@octokit/auth-app] installationId option is required for installation authentication."
+    );
+  }
+  if (options.factory) {
+    const { type, factory: factory11, oauthApp, ...factoryAuthOptions } = {
+      ...state,
+      ...options
+    };
+    return factory11(factoryAuthOptions);
+  }
+  const request2 = customRequest || state.request;
+  return getInstallationAuthenticationConcurrently(
+    state,
+    { ...options, installationId },
+    request2
+  );
+}
+var pendingPromises = /* @__PURE__ */ new Map();
+function getInstallationAuthenticationConcurrently(state, options, request2) {
+  const cacheKey = optionsToCacheKey(options);
+  if (pendingPromises.has(cacheKey)) {
+    return pendingPromises.get(cacheKey);
+  }
+  const promise2 = getInstallationAuthenticationImpl(
+    state,
+    options,
+    request2
+  ).finally(() => pendingPromises.delete(cacheKey));
+  pendingPromises.set(cacheKey, promise2);
+  return promise2;
+}
+async function getInstallationAuthenticationImpl(state, options, request2) {
+  if (!options.refresh) {
+    const result = await get(state.cache, options);
+    if (result) {
+      const {
+        token: token2,
+        createdAt: createdAt2,
+        expiresAt: expiresAt2,
+        permissions: permissions2,
+        repositoryIds: repositoryIds2,
+        repositoryNames: repositoryNames2,
+        singleFileName: singleFileName2,
+        repositorySelection: repositorySelection2
+      } = result;
+      return toTokenAuthentication({
+        installationId: options.installationId,
+        token: token2,
+        createdAt: createdAt2,
+        expiresAt: expiresAt2,
+        permissions: permissions2,
+        repositorySelection: repositorySelection2,
+        repositoryIds: repositoryIds2,
+        repositoryNames: repositoryNames2,
+        singleFileName: singleFileName2
+      });
+    }
+  }
+  const appAuthentication = await getAppAuthentication(state);
+  const payload = {
+    installation_id: options.installationId,
+    mediaType: {
+      previews: ["machine-man"]
+    },
+    headers: {
+      authorization: `bearer ${appAuthentication.token}`
+    }
+  };
+  if (options.repositoryIds) {
+    Object.assign(payload, { repository_ids: options.repositoryIds });
+  }
+  if (options.repositoryNames) {
+    Object.assign(payload, {
+      repositories: options.repositoryNames
+    });
+  }
+  if (options.permissions) {
+    Object.assign(payload, { permissions: options.permissions });
+  }
+  const {
+    data: {
+      token,
+      expires_at: expiresAt,
+      repositories,
+      permissions: permissionsOptional,
+      repository_selection: repositorySelectionOptional,
+      single_file: singleFileName
+    }
+  } = await request2(
+    "POST /app/installations/{installation_id}/access_tokens",
+    payload
+  );
+  const permissions = permissionsOptional || {};
+  const repositorySelection = repositorySelectionOptional || "all";
+  const repositoryIds = repositories ? repositories.map((r) => r.id) : void 0;
+  const repositoryNames = repositories ? repositories.map((repo) => repo.name) : void 0;
+  const createdAt = (/* @__PURE__ */ new Date()).toISOString();
+  const cacheOptions = {
+    token,
+    createdAt,
+    expiresAt,
+    repositorySelection,
+    permissions,
+    repositoryIds,
+    repositoryNames
+  };
+  if (singleFileName) {
+    Object.assign(payload, { singleFileName });
+  }
+  await set2(state.cache, options, cacheOptions);
+  const cacheData = {
+    installationId: options.installationId,
+    token,
+    createdAt,
+    expiresAt,
+    repositorySelection,
+    permissions,
+    repositoryIds,
+    repositoryNames
+  };
+  if (singleFileName) {
+    Object.assign(cacheData, { singleFileName });
+  }
+  return toTokenAuthentication(cacheData);
+}
+async function auth5(state, authOptions) {
+  switch (authOptions.type) {
+    case "app":
+      return getAppAuthentication(state);
+    case "oauth-app":
+      return state.oauthApp({ type: "oauth-app" });
+    case "installation":
+      authOptions;
+      return getInstallationAuthentication(state, {
+        ...authOptions,
+        type: "installation"
+      });
+    case "oauth-user":
+      return state.oauthApp(authOptions);
+    default:
+      throw new Error(`Invalid auth type: ${authOptions.type}`);
+  }
+}
+var PATHS = [
+  "/app",
+  "/app/hook/config",
+  "/app/hook/deliveries",
+  "/app/hook/deliveries/{delivery_id}",
+  "/app/hook/deliveries/{delivery_id}/attempts",
+  "/app/installations",
+  "/app/installations/{installation_id}",
+  "/app/installations/{installation_id}/access_tokens",
+  "/app/installations/{installation_id}/suspended",
+  "/app/installation-requests",
+  "/marketplace_listing/accounts/{account_id}",
+  "/marketplace_listing/plan",
+  "/marketplace_listing/plans",
+  "/marketplace_listing/plans/{plan_id}/accounts",
+  "/marketplace_listing/stubbed/accounts/{account_id}",
+  "/marketplace_listing/stubbed/plan",
+  "/marketplace_listing/stubbed/plans",
+  "/marketplace_listing/stubbed/plans/{plan_id}/accounts",
+  "/orgs/{org}/installation",
+  "/repos/{owner}/{repo}/installation",
+  "/users/{username}/installation",
+  "/enterprises/{enterprise}/installation"
+];
+function routeMatcher(paths) {
+  const regexes = paths.map(
+    (p) => p.split("/").map((c) => c.startsWith("{") ? "(?:.+?)" : c).join("/")
+  );
+  const regex = `^(?:${regexes.map((r) => `(?:${r})`).join("|")})$`;
+  return new RegExp(regex, "i");
+}
+var REGEX = routeMatcher(PATHS);
+function requiresAppAuth(url2) {
+  return !!url2 && REGEX.test(url2.split("?")[0]);
+}
+var FIVE_SECONDS_IN_MS = 5 * 1e3;
+function isNotTimeSkewError(error40) {
+  return !(error40.message.match(
+    /'Expiration time' claim \('exp'\) is too far in the future/
+  ) || error40.message.match(
+    /'Expiration time' claim \('exp'\) must be a numeric value representing the future time at which the assertion expires/
+  ) || error40.message.match(
+    /'Issued at' claim \('iat'\) must be an Integer representing the time that the assertion was issued/
+  ));
+}
+async function hook5(state, request2, route, parameters) {
+  const endpoint2 = request2.endpoint.merge(route, parameters);
+  const url2 = endpoint2.url;
+  if (/\/login\/oauth\/access_token$/.test(url2)) {
+    return request2(endpoint2);
+  }
+  if (requiresAppAuth(url2.replace(request2.endpoint.DEFAULTS.baseUrl, ""))) {
+    const { token: token2 } = await getAppAuthentication(state);
+    endpoint2.headers.authorization = `bearer ${token2}`;
+    let response;
+    try {
+      response = await request2(endpoint2);
+    } catch (error40) {
+      if (isNotTimeSkewError(error40)) {
+        throw error40;
+      }
+      if (typeof error40.response.headers.date === "undefined") {
+        throw error40;
+      }
+      const diff = Math.floor(
+        (Date.parse(error40.response.headers.date) - Date.parse((/* @__PURE__ */ new Date()).toString())) / 1e3
+      );
+      state.log.warn(error40.message);
+      state.log.warn(
+        `[@octokit/auth-app] GitHub API time and system time are different by ${diff} seconds. Retrying request with the difference accounted for.`
+      );
+      const { token: token3 } = await getAppAuthentication({
+        ...state,
+        timeDifference: diff
+      });
+      endpoint2.headers.authorization = `bearer ${token3}`;
+      return request2(endpoint2);
+    }
+    return response;
+  }
+  if (requiresBasicAuth(url2)) {
+    const authentication = await state.oauthApp({ type: "oauth-app" });
+    endpoint2.headers.authorization = authentication.headers.authorization;
+    return request2(endpoint2);
+  }
+  const { token, createdAt } = await getInstallationAuthentication(
+    state,
+    // @ts-expect-error TBD
+    {},
+    request2.defaults({ baseUrl: endpoint2.baseUrl })
+  );
+  endpoint2.headers.authorization = `token ${token}`;
+  return sendRequestWithRetries(
+    state,
+    request2,
+    endpoint2,
+    createdAt
+  );
+}
+async function sendRequestWithRetries(state, request2, options, createdAt, retries = 0) {
+  const timeSinceTokenCreationInMs = +/* @__PURE__ */ new Date() - +new Date(createdAt);
+  try {
+    return await request2(options);
+  } catch (error40) {
+    if (error40.status !== 401) {
+      throw error40;
+    }
+    if (timeSinceTokenCreationInMs >= FIVE_SECONDS_IN_MS) {
+      if (retries > 0) {
+        error40.message = `After ${retries} retries within ${timeSinceTokenCreationInMs / 1e3}s of creating the installation access token, the response remains 401. At this point, the cause may be an authentication problem or a system outage. Please check https://www.githubstatus.com for status information`;
+      }
+      throw error40;
+    }
+    ++retries;
+    const awaitTime = retries * 1e3;
+    state.log.warn(
+      `[@octokit/auth-app] Retrying after 401 response to account for token replication delay (retry: ${retries}, wait: ${awaitTime / 1e3}s)`
+    );
+    await new Promise((resolve2) => setTimeout(resolve2, awaitTime));
+    return sendRequestWithRetries(state, request2, options, createdAt, retries);
+  }
+}
+var VERSION29 = "8.2.0";
+function createAppAuth(options) {
+  if (!options.appId) {
+    throw new Error("[@octokit/auth-app] appId option is required");
+  }
+  if (!options.privateKey && !options.createJwt) {
+    throw new Error("[@octokit/auth-app] privateKey option is required");
+  } else if (options.privateKey && options.createJwt) {
+    throw new Error(
+      "[@octokit/auth-app] privateKey and createJwt options are mutually exclusive"
+    );
+  }
+  if ("installationId" in options && !options.installationId) {
+    throw new Error(
+      "[@octokit/auth-app] installationId is set to a falsy value"
+    );
+  }
+  const log = options.log || {};
+  if (typeof log.warn !== "function") {
+    log.warn = console.warn.bind(console);
+  }
+  const request2 = options.request || request.defaults({
+    headers: {
+      "user-agent": `octokit-auth-app.js/${VERSION29} ${getUserAgent()}`
+    }
+  });
+  const state = Object.assign(
+    {
+      request: request2,
+      cache: getCache()
+    },
+    options,
+    options.installationId ? { installationId: Number(options.installationId) } : {},
+    {
+      log,
+      oauthApp: createOAuthAppAuth({
+        clientType: "github-app",
+        clientId: options.clientId || "",
+        clientSecret: options.clientSecret || "",
+        request: request2
+      })
+    }
+  );
+  return Object.assign(auth5.bind(null, state), {
+    hook: hook5.bind(null, state)
+  });
+}
+
 // packages/github/src/client.ts
-import { createAppAuth } from "@octokit/auth-app";
 import { readFileSync } from "fs";
 function createOctokit(config2) {
   return new Octokit2({ auth: config2.token });
@@ -67745,4 +69061,13 @@ main().catch((err2) => {
 @octokit/request/dist-bundle/index.js:
   (* v8 ignore next -- @preserve *)
   (* v8 ignore else -- @preserve *)
+
+toad-cache/dist/toad-cache.mjs:
+  (**
+   * toad-cache
+   *
+   * @copyright 2024 Igor Savin <kibertoad@gmail.com>
+   * @license MIT
+   * @version 3.7.0
+   *)
 */
